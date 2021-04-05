@@ -5,11 +5,18 @@
 /.pnp
 .pnp.js
 
+# User-specific files
+compile.js
+deploy.js
+.env
+
 # testing
 /coverage
+/test
 
 # production
 /build
+/src/contracts/build
 
 # misc
 .DS_Store
