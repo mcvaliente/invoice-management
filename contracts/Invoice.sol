@@ -14,7 +14,7 @@ contract Invoice {
     }
     
     struct MemberInfo {
-        bytes32 id; //hash of the id of the member
+        bytes32 memberId; //hash of the id of the member
         bytes16 gender; //F (Female) M (Male) O (Other)
         uint256 age;
         LocationInfo location;
@@ -33,7 +33,7 @@ contract Invoice {
     
     function createInvoice(
         bytes32 invoiceId,
-        bytes16[] memory invoicesDate,
+        bytes16[] memory invoiceDates,
         bytes16 categoryId,
         bytes32 memberId,
         bytes16 gender,
@@ -50,7 +50,7 @@ contract Invoice {
         });
         
         MemberInfo memory memberData = MemberInfo({
-            id: memberId,
+            memberId: memberId,
             gender: gender,
             age: age,
             location: locationData,
@@ -59,8 +59,8 @@ contract Invoice {
         
         InvoiceInfo memory invoiceData = InvoiceInfo({
             invoiceId: invoiceId,
-            issueDate: invoicesDate[0],
-            expiryDate: invoicesDate[1],
+            issueDate: invoiceDates[0],
+            expiryDate: invoiceDates[1],
             categoryId: categoryId,
             member: memberData,
             validInvoice: true
@@ -96,7 +96,7 @@ contract Invoice {
         )
     {
         return (
-            invoices[invoiceId].member.id,
+            invoices[invoiceId].member.memberId,
             invoices[invoiceId].issueDate,
             invoices[invoiceId].expiryDate,
             invoices[invoiceId].categoryId,
