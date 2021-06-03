@@ -5,7 +5,6 @@ pragma solidity >=0.7.0 <0.9.0;
 contract Invoice {
     
     struct InvoiceInfo {
-        bytes32 invoiceId;
         bytes16 issueDate;
         bytes16 expiryDate; //dd/mm/aaaa
         bytes16 categoryId;
@@ -28,7 +27,7 @@ contract Invoice {
         bytes32 country;
     }
     
-    mapping(bytes32 => InvoiceInfo) invoices;
+    mapping(bytes32 => InvoiceInfo) invoices; //bytes32 represents invoiceId
     uint32 deployedInvoices;
     
     function createInvoice(
@@ -58,7 +57,6 @@ contract Invoice {
         });
         
         InvoiceInfo memory invoiceData = InvoiceInfo({
-            invoiceId: invoiceId,
             issueDate: invoiceDates[0],
             expiryDate: invoiceDates[1],
             categoryId: categoryId,
