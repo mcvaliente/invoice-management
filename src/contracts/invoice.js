@@ -13,7 +13,7 @@ const web3 = getWeb3();
 if (web3) {
   contractInstance = new web3.eth.Contract(
     invoiceContract.abi,
-    "<<contract-address>>"
+    process.env.REACT_APP_INVOICE_CONTRACT_ADDRESS
   );
 }
 
