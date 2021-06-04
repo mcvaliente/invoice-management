@@ -9,18 +9,18 @@ const compiledInvoice = require("../src/contracts/build/Invoice.json");
 let accounts; //List of 10 accounts provided by Ganache.
 let invoice; //our contract: Invoice
 let invoiceId; //bytes32
+let memberId; //bytes32
+let office; //bytes32
+let county; //bytes32
+let country; //bytes32
+let location; //bytes32[]
 let issueDate; //bytes16
 let expiryDate; //bytes16
-let invoiceDates;
+let invoiceDates; //bytes16[]
 let categoryId; //bytes16
-let memberId; //bytes32
 let gender; //bytes16
-let age; //uint256
-let office;
-let county;
-let country;
-let location;
 let occupationId; //bytes16
+let age; //uint256
 
 beforeEach(async () => {
   //Get a list of all accounts
@@ -53,13 +53,13 @@ beforeEach(async () => {
     await invoice.methods
       .createInvoice(
         invoiceId,
+        memberId,
+        location,
         invoiceDates,
         categoryId,
-        memberId,
         gender,
-        age,
-        location,
-        occupationId
+        occupationId,
+        age
       )
       .send({
         from: accounts[0],

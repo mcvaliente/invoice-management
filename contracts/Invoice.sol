@@ -32,13 +32,13 @@ contract Invoice {
     
     function createInvoice(
         bytes32 invoiceId,
+        bytes32 memberId,
+        bytes32[] memory location,
         bytes16[] memory invoiceDates,
         bytes16 categoryId,
-        bytes32 memberId,
         bytes16 gender,
-        uint256 age,
-        bytes32[] memory location,
-        bytes16 occupationId
+        bytes16 occupationId,
+        uint256 age
 
     ) public {
 
