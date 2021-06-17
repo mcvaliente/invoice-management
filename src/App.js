@@ -1,21 +1,26 @@
 import React from "react";
 import "./App.css";
 import { Container } from "@material-ui/core";
-import Header from "./shared/Header";
-import Footer from "./shared/Footer";
-import Home from "./home/Home";
+import CssBaseline from "@material-ui/core/CssBaseline";
+import Footer from "./components/shared/Footer";
+import Home from "./components/home/Home";
 import { Switch, Route } from "react-router-dom";
+import Error404 from "./components/error/Error404";
 
 function App() {
   return (
-    <Container maxWidth="lg">
-      <Header />
-      <Switch>
-        {/* The Switch decides which component to show based on the current URL.*/}
-        <Route exact path="/" component={() => <Home />} />
-      </Switch>
-      <Footer />
-    </Container>
+    <>
+      <CssBaseline />
+      <Container>
+        <Switch>
+          {/* The Switch decides which component to show based on the current URL.*/}
+          <Route exact path="/" component={() => <Home />} />
+          {/* Redirect user to a specific page if the route does not exist. */}
+          <Route component={Error404} />
+        </Switch>
+        <Footer />
+      </Container>
+    </>
   );
 }
 

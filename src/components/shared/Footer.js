@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "../assets/css/Footer.module.css";
+import styles from "../../assets/css/Footer.module.css";
 import Link from "@material-ui/core/Link";
 import Typography from "@material-ui/core/Typography";
 
@@ -21,9 +21,9 @@ export default () => {
           color="inherit"
           href="https://github.com/P2PModels"
           target="_blank"
-          title="GitHub"
+          title="P2P Models on GitHub"
         >
-          <img src={srcGitHubImg} alt="GitHub" />
+          <img src={srcGitHubImg} alt="P2P Models on GitHub" />
         </Link>
       </Typography>
     </footer>
