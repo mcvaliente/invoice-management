@@ -8,3 +8,16 @@ export function getWeb3() {
   }
   return web3;
 }
+
+export function checkMetaMask() {
+  //Check if the browser is running MetaMask and differentiate MetaMask from other
+  //ethereum-compatible browsers.
+  //Ref: https://docs.metamask.io/guide/getting-started.html#basic-considerations
+  //If true => MetaMask is installed.
+  if (typeof window.ethereum !== "undefined") {
+    console.log("MetaMask is installed!");
+    return true;
+  } else {
+    return false;
+  }
+}
