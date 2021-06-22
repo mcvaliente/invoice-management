@@ -7,7 +7,7 @@ import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import { MetaMaskButton, Link } from "rimble-ui";
 
-export default function AlertDialog(props) {
+export default function MetaMaskInstallationDialog(props) {
   const [open, setOpen] = useState(true);
 
   const handleClose = () => {
@@ -28,8 +28,9 @@ export default function AlertDialog(props) {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Install the MetaMask browser extension to user our blockchain
-            features in your current browser and then close this dialog.
+            Install the MetaMask browser extension to use our app's blockchain
+            features in your current browser, and then close this dialog.
+            <br />
             Supported Browsers:{" "}
             <Link
               href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=en"

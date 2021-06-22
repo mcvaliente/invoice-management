@@ -32,7 +32,7 @@ const Header = (props) => {
         <Typography className={styles.title} variant="h5" noWrap>
           P2P Models
         </Typography>
-        {props.metamaskInstalled ? (
+        {props.metamaskInstalled && props.validNetwork ? (
           <>
             <IconButton
               aria-label="search"
@@ -51,9 +51,20 @@ const Header = (props) => {
             </MetaMaskButton>
           </>
         ) : (
-          <MetaMaskButton disabled className={styles.metaMaskButton}>
-            Connect with MetaMask
-          </MetaMaskButton>
+          <>
+            <IconButton
+              aria-label="search"
+              color="inherit"
+              title="Search invoice"
+              style={{ marginRight: 20 }}
+              disabled
+            >
+              <SearchIcon />
+            </IconButton>
+            <MetaMaskButton disabled className={styles.metaMaskButton}>
+              Connect with MetaMask
+            </MetaMaskButton>
+          </>
         )}
       </Toolbar>
     </AppBar>
