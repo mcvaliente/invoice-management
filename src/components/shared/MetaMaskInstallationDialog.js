@@ -10,7 +10,7 @@ import { MetaMaskButton, Link } from "rimble-ui";
 export default function MetaMaskInstallationDialog(props) {
   const [open, setOpen] = useState(true);
 
-  const handleClose = () => {
+  const closeInstallationDialogHandler = () => {
     setOpen(false);
     props.metamaskDialogHandler();
   };
@@ -19,7 +19,7 @@ export default function MetaMaskInstallationDialog(props) {
     <>
       <Dialog
         open={open}
-        onClose={handleClose}
+        onClose={closeInstallationDialogHandler}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
@@ -28,8 +28,9 @@ export default function MetaMaskInstallationDialog(props) {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Install the MetaMask browser extension to use our app's blockchain
-            features in your current browser, and then close this dialog.
+            Please, install the MetaMask browser extension to use our dapp's
+            blockchain features in your current browser, and then close this
+            dialog.
             <br />
             Supported Browsers:{" "}
             <Link
@@ -67,7 +68,11 @@ export default function MetaMaskInstallationDialog(props) {
           </Link>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary" autoFocus>
+          <Button
+            onClick={closeInstallationDialogHandler}
+            color="primary"
+            autoFocus
+          >
             Close
           </Button>
         </DialogActions>

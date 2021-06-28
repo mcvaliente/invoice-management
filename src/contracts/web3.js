@@ -47,7 +47,8 @@ export async function getNetwork() {
   try {
     if (typeof window.ethereum !== "undefined") {
       const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      //Check that chainId is the Rinkeby Test Network.
+      //More info: https://chainid.network/
+      //More info: https://chainid.network/chains.json
       switch (chainId) {
         case "0x1":
           return "Mainnet";
@@ -65,6 +66,38 @@ export async function getNetwork() {
     }
   } catch (error) {
     console.error(error);
-    return false;
+    return "Unable to retrieve chain id.";
+  }
+}
+
+export async function enableMetaMask() {
+  try {
+    if (typeof window.ethereum !== "undefined") {
+      //MetaMask is installed.
+      //Launch the plugin:
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      //Network version: 4 (Rinkeby).
+      console.log("Network version: ", window.ethereum.networkVersion);
+      console.log(
+        "Ethereum selected address: ",
+        window.ethereum.selectedAddress
+      );
+      console.log("MetaMask is connected to the application.");
+      return 0;
+    } else {
+      console.log("ERROR - MetaMask is not connected to the application.");
+      return -1;
+    }
+  } catch (error) {
+    console.error(error);
+    return error.code;
+  }
+}
+
+export function getCurrentAccount() {
+  if (typeof window.ethereum !== "undefined") {
+    const currentAccount = window.ethereum.selectedAddress;
+    console.log("Current address: " + currentAccount);
+    return currentAccount;
   }
 }

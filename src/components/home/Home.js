@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/shared/Header";
-import { checkMetaMask, checkNetwork, getNetwork } from "../../contracts/web3";
+import {
+  checkMetaMask,
+  checkNetwork,
+  getNetwork,
+  getCurrentAccount,
+  enableMetaMask,
+} from "../../contracts/web3";
 import MetaMaskInstallationDialog from "../../components/shared/MetaMaskInstallationDialog";
 import MetaMaskNetworkDialog from "../../components/shared/MetaMaskNetworkDialog";
+import MetaMaskConnectionDialog from "../../components/shared/MetaMaskConnectionDialog";
 
 //Using Hooks.
 function Home() {
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
   const [isValidNetwork, setIsValidNetwork] = useState(false);
+  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(false);
   const [networkName, setNetworkName] = useState("");
   const [reloadPage, setReloadPage] = useState(false);
+  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
 
   const metamaskInstallationDialogHandler = () => {
     console.log(
@@ -25,8 +34,36 @@ function Home() {
     setReloadPage(true);
   };
 
+  const metamaskConnectionHandler = async () => {
+    const errorCode = await enableMetaMask();
+    console.log("Error code: ", errorCode);
+    let validConnection = false;
+    switch (errorCode) {
+      case 0:
+        validConnection = true;
+        break;
+      case -32002:
+        setConnectionErrorMessage(
+          "RPC Error: Request of type 'wallet_requestPermissions' already pending for this dapp."
+        );
+        break;
+      case 4001:
+        setConnectionErrorMessage("Unable to connect with MetaMask.");
+        break;
+      default:
+        setConnectionErrorMessage("Unknown error");
+    }
+    setIsMetaMaskConnected(validConnection);
+  };
+
+  const metamaskConnectionDialogHandler = () => {
+    console.log("Reset state of the connection.");
+    setConnectionErrorMessage("");
+    setIsMetaMaskConnected(false);
+  };
+
   useEffect(() => {
-    //Check if MetaMask is installed.
+    //Check if MetaMask is installed and the Rinkeby test network is selected.
     checkWallet();
 
     //async function inside useEffect since we cannot declare useEffect as "async".
@@ -41,20 +78,29 @@ function Home() {
           const chainName = await getNetwork();
           setNetworkName(chainName);
           console.log("Current network: ", chainName);
+        } else {
+          console.log("Checking current account...");
+          const currentAccount = getCurrentAccount();
+          if (currentAccount !== null) {
+            //MetaMask is connected.
+            setIsMetaMaskConnected(true);
+          } else {
+            setIsMetaMaskConnected(false);
+          }
         }
       }
     }
 
-    //async function checkNetwork() {
-    //const validNetwork = await checkRinkebyNetwork();
-    //console.log("Valid network : ", validNetwork);
-    //setIsRinkebyNetwork(validNetwork);
     //Listen if the network id changes. Reload the page for security.
     //See "chainChainged" section in https://docs.metamask.io/guide/ethereum-provider.html#events
-    //window.ethereum.on("chainChanged", (_chainId) =>
-    //  window.location.reload()
-    //);
-    //}
+    //First we check that the user has not uninstalled MetaMask (typeof window.ethereum !== "undefined").
+    if (typeof window.ethereum !== "undefined") {
+      window.ethereum.on("chainChanged", handleChainChanged);
+    }
+
+    function handleChainChanged(_chainId) {
+      window.location.reload();
+    }
   }, []);
 
   if (reloadPage) {
@@ -66,6 +112,8 @@ function Home() {
       <Header
         metamaskInstalled={isMetaMaskInstalled}
         validNetwork={isValidNetwork}
+        metamaskConnected={isMetaMaskConnected}
+        clicked={metamaskConnectionHandler}
       />
       {isMetaMaskInstalled ? (
         isValidNetwork ? (
@@ -81,6 +129,12 @@ function Home() {
           metamaskDialogHandler={metamaskInstallationDialogHandler}
         />
       )}
+      {!!connectionErrorMessage ? (
+        <MetaMaskConnectionDialog
+          metamaskConnDialogHandler={metamaskConnectionDialogHandler}
+          errorMessage={connectionErrorMessage}
+        />
+      ) : null}
     </>
   );
 }

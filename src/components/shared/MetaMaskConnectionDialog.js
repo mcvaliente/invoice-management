@@ -6,36 +6,38 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
 
-export default function MetaMaskNetworkDialog(props) {
-  const [openNetworDialog, setOpenNetworkDialog] = useState(true);
+export default function MetaMaskConnectionDialog(props) {
+  const [openConnectionDialog, setOpenConnectionDialog] = useState(true);
 
-  const networkDialogCloseHandler = () => {
-    setOpenNetworkDialog(false);
-    props.metamaskNetDialogHandler();
+  const connectionDialogCloseHandler = () => {
+    setOpenConnectionDialog(false);
+    props.metamaskConnDialogHandler();
   };
 
   return (
     <>
       <Dialog
-        open={openNetworDialog}
-        onClose={networkDialogCloseHandler}
+        open={openConnectionDialog}
+        onClose={connectionDialogCloseHandler}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title">
-          {"MetaMask Network Selection"}
+          {"MetaMask Account Connection Error"}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Switch to the Rinkeby Test Network in MetaMask.
+            {props.errorMessage}
             <br />
-            Please, change your network in your MetaMask extension.
-            <br />
-            You're currently on: {props.currentNetwork}.
+            Please, check your MetaMask browser extension and try again.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={networkDialogCloseHandler} color="primary" autoFocus>
+          <Button
+            onClick={connectionDialogCloseHandler}
+            color="primary"
+            autoFocus
+          >
             Close
           </Button>
         </DialogActions>

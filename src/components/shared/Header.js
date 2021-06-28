@@ -5,7 +5,7 @@ import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
 import SearchIcon from "@material-ui/icons/Search";
-import { MetaMaskButton } from "rimble-ui";
+import { MetaMaskButton, Tooltip } from "rimble-ui";
 
 const srcP2PModelsLogo = "/images/logo-p2pmodels.png";
 
@@ -14,60 +14,64 @@ const invoiceSearchHandler = (invoiceId) => {
   alert("New invoice Search");
 };
 
-const connectMetaMaskHandler = () => {
-  alert("Connect MetaMask");
-};
-
 const Header = (props) => {
   return (
-    <AppBar position="static">
-      <Toolbar className={styles.toolbar}>
-        <img
-          src={srcP2PModelsLogo}
-          alt="P2P Models"
-          width="70"
-          height="70"
-          className={styles.logo}
-        />
-        <Typography className={styles.title} variant="h5" noWrap>
-          P2P Models
-        </Typography>
-        {props.metamaskInstalled && props.validNetwork ? (
-          <>
-            <IconButton
-              aria-label="search"
-              color="inherit"
-              title="Search invoice"
-              style={{ marginRight: 20 }}
-              onClick={invoiceSearchHandler}
-            >
-              <SearchIcon />
-            </IconButton>
-            <MetaMaskButton
-              onClick={connectMetaMaskHandler}
-              className={styles.metaMaskButton}
-            >
-              Connect with MetaMask
-            </MetaMaskButton>
-          </>
-        ) : (
-          <>
-            <IconButton
-              aria-label="search"
-              color="inherit"
-              title="Search invoice"
-              style={{ marginRight: 20 }}
-              disabled
-            >
-              <SearchIcon />
-            </IconButton>
-            <MetaMaskButton disabled className={styles.metaMaskButton}>
-              Connect with MetaMask
-            </MetaMaskButton>
-          </>
-        )}
-      </Toolbar>
-    </AppBar>
+    <>
+      <AppBar position="static">
+        <Toolbar className={styles.toolbar}>
+          <img
+            src={srcP2PModelsLogo}
+            alt="P2P Models"
+            width="70"
+            height="70"
+            className={styles.logo}
+          />
+          <Typography className={styles.title} variant="h5" noWrap>
+            P2P Models
+          </Typography>
+          {props.metamaskInstalled &&
+          props.validNetwork &&
+          !props.metamaskConnected ? (
+            <>
+              <Tooltip
+                message="Search for an invoice by doc number"
+                placement="bottom"
+                variant="dark"
+              >
+                <IconButton
+                  aria-label="search"
+                  color="inherit"
+                  style={{ marginRight: 20 }}
+                  onClick={invoiceSearchHandler}
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Tooltip>
+              <MetaMaskButton
+                onClick={props.clicked}
+                className={styles.metaMaskButton}
+              >
+                Connect with MetaMask
+              </MetaMaskButton>
+            </>
+          ) : (
+            <>
+              <IconButton
+                aria-label="search"
+                color="inherit"
+                style={{ marginRight: 20 }}
+                disabled
+              >
+                <SearchIcon />
+              </IconButton>
+              <MetaMaskButton disabled className={styles.metaMaskButton}>
+                Connect with MetaMask
+              </MetaMaskButton>
+            </>
+          )}
+        </Toolbar>
+      </AppBar>
+    </>
   );
 };
 
