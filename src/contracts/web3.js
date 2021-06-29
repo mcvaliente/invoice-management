@@ -96,8 +96,11 @@ export async function enableMetaMask() {
 
 export function getCurrentAccount() {
   if (typeof window.ethereum !== "undefined") {
+    //Returns null if an account is not selected.
     const currentAccount = window.ethereum.selectedAddress;
     console.log("Current address: " + currentAccount);
     return currentAccount;
+  } else {
+    return null;
   }
 }

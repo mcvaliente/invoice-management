@@ -4,8 +4,9 @@ import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
+import Tooltip from "@material-ui/core/Tooltip";
 import SearchIcon from "@material-ui/icons/Search";
-import { MetaMaskButton, Tooltip } from "rimble-ui";
+import { MetaMaskButton } from "rimble-ui";
 
 const srcP2PModelsLogo = "/images/logo-p2pmodels.png";
 
@@ -29,15 +30,9 @@ const Header = (props) => {
           <Typography className={styles.title} variant="h5" noWrap>
             P2P Models
           </Typography>
-          {props.metamaskInstalled &&
-          props.validNetwork &&
-          !props.metamaskConnected ? (
+          {props.metamaskInstalled && props.validNetwork ? (
             <>
-              <Tooltip
-                message="Search for an invoice by doc number"
-                placement="bottom"
-                variant="dark"
-              >
+              <Tooltip title="Search for an invoice by doc number" arrow>
                 <IconButton
                   aria-label="search"
                   color="inherit"
@@ -50,8 +45,11 @@ const Header = (props) => {
               <MetaMaskButton
                 onClick={props.clicked}
                 className={styles.metaMaskButton}
+                disabled={props.metamaskConnected}
               >
-                Connect with MetaMask
+                {props.metamaskConnected
+                  ? "Connected with MetaMask"
+                  : "Connect with MetaMask"}
               </MetaMaskButton>
             </>
           ) : (

@@ -29,7 +29,8 @@ export default function MetaMaskConnectionDialog(props) {
           <DialogContentText id="alert-dialog-description">
             {props.errorMessage}
             <br />
-            Please, check your MetaMask browser extension and try again.
+            Please, check your MetaMask browser extension, connect to a valid
+            account and try again.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

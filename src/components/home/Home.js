@@ -57,7 +57,7 @@ function Home() {
   };
 
   const metamaskConnectionDialogHandler = () => {
-    console.log("Reset state of the connection.");
+    console.log("Reset the state of the connection.");
     setConnectionErrorMessage("");
     setIsMetaMaskConnected(false);
   };
