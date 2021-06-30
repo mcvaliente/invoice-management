@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Header from "../../components/shared/Header";
+import Header from "../shared/Header";
+import NewInvoice from "../invoice/NewInvoice";
 import {
   checkMetaMask,
   checkNetwork,
@@ -117,7 +118,7 @@ function Home() {
       />
       {isMetaMaskInstalled ? (
         isValidNetwork ? (
-          <h1>This is home</h1>
+          <NewInvoice />
         ) : (
           <MetaMaskNetworkDialog
             metamaskNetDialogHandler={metamaskNetworkDialogHandler}
