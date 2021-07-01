@@ -1,4 +1,4 @@
-import { getWeb3 } from "./web3";
+import { getWeb3 } from "../components/wallet/web3";
 import invoiceContract from "./build/invoice.json";
 
 let contractInstance;

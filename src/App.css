@@ -3,3 +3,9 @@ body {
   flex-direction: column;
   min-height: 100vh;
 }
+
+/*** Material UI Form button style ***/
+.MuiButton-containedPrimary {
+  color: #fff;
+  background-color: #aa4994 !important;
+}

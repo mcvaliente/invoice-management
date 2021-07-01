@@ -5,3 +5,18 @@
 .title {
   margin-top: 25px !important;
 }
+
+.divForm {
+  margin-bottom: 20px;
+}
+
+.divButtonForm {
+  margin-top: 50px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.spacer {
+  margin-bottom: 100px;
+  visibility: hidden;
+}

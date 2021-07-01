@@ -7,10 +7,10 @@ import {
   getNetwork,
   getCurrentAccount,
   enableMetaMask,
-} from "../../contracts/web3";
-import MetaMaskInstallationDialog from "../../components/shared/MetaMaskInstallationDialog";
-import MetaMaskNetworkDialog from "../../components/shared/MetaMaskNetworkDialog";
-import MetaMaskConnectionDialog from "../../components/shared/MetaMaskConnectionDialog";
+} from "../wallet/web3";
+import MetaMaskInstallationDialog from "../wallet/MetaMaskInstallationDialog";
+import MetaMaskNetworkDialog from "../wallet/MetaMaskNetworkDialog";
+import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
 
 //Using Hooks.
 function Home() {
