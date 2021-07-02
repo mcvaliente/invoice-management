@@ -6,6 +6,7 @@ import {
 } from "../../utils/FormFieldsValidation";
 import {
   FormControl,
+  FormControlLabel,
   InputLabel,
   TextField,
   Typography,
@@ -13,9 +14,11 @@ import {
   OutlinedInput,
   Button,
   FormHelperText,
-  Chip,
   Divider,
+  Switch,
 } from "@material-ui/core";
+import { withStyles } from "@material-ui/core/styles";
+import { green, red } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
 
@@ -23,8 +26,46 @@ function NewInvoice() {
   const [docNumber, setDocNumber] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [paidInvoice, setPaidInvoice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
+
+  const GreenSwitch = withStyles({
+    switchBase: {
+      color: red[300],
+      "&$checked": {
+        color: green[700],
+      },
+      "&$checked + $track": {
+        backgroundColor: green[700],
+      },
+    },
+    checked: {},
+    track: {},
+  })(Switch);
+
+  const paidInvoiceHandler = (e) => {
+    const value = e.target.checked;
+    setPaidInvoice(value);
+  };
+
+  const docNumberHandler = (e) => {
+    const value = e.target.value;
+    console.log("Invoice doc number: ", value);
+    setDocNumber(value);
+  };
+
+  const issueDateHandler = (e) => {
+    const value = e.target.value;
+    console.log("Issue date: ", value);
+    setIssueDate(value);
+  };
+
+  const expiryDateHandler = (e) => {
+    const value = e.target.value;
+    console.log("Expiry date: ", value);
+    setExpiryDate(value);
+  };
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -86,6 +127,18 @@ function NewInvoice() {
         </Typography>
         <br />
         <div className={styles.divForm}>
+          <FormControlLabel
+            control={
+              <GreenSwitch
+                checked={paidInvoice}
+                onChange={paidInvoiceHandler}
+                name="checkedPaidInvoice"
+              />
+            }
+            label="Paid"
+          />
+        </div>
+        <div className={styles.divForm}>
           <FormControl
             variant="outlined"
             style={{ width: "40%", marginRight: "50px" }}
@@ -97,6 +150,8 @@ function NewInvoice() {
               labelWidth={60}
               placeholder="Document number"
               error={!!errorMessages.docNumber}
+              value={docNumber}
+              onChange={docNumberHandler}
             />
             {!!errorMessages.docNumber ? (
               <FormHelperText id="docNumberErrorMessage">
@@ -104,7 +159,6 @@ function NewInvoice() {
               </FormHelperText>
             ) : null}
           </FormControl>
-          <Chip label="Pending" style={{ backgroundColor: "#aa4994" }} />
         </div>
         <div className={styles.divForm}>
           <TextField
@@ -119,6 +173,8 @@ function NewInvoice() {
             width="20ch"
             error={!!errorMessages.issueDate}
             helperText={errorMessages.issueDate}
+            value={issueDate}
+            onChange={issueDateHandler}
           />
           <TextField
             id="txtExpiryDate"
@@ -131,6 +187,8 @@ function NewInvoice() {
             width="20ch"
             error={!!errorMessages.expiryDate}
             helperText={errorMessages.expiryDate}
+            value={expiryDate}
+            onChange={expiryDateHandler}
           />{" "}
         </div>
         <div className={styles.divForm}>
