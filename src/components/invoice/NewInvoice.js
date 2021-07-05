@@ -3,6 +3,7 @@ import {
   checkTextField,
   checkDateField,
   greaterThanCurrentDate,
+  greaterThanFirstDate,
 } from "../../utils/FormFieldsValidation";
 import {
   FormControl,
@@ -16,9 +17,13 @@ import {
   FormHelperText,
   Divider,
   Switch,
+  Radio,
+  RadioGroup,
+  FormLabel,
+  CircularProgress,
 } from "@material-ui/core";
 import { withStyles } from "@material-ui/core/styles";
-import { green, red } from "@material-ui/core/colors";
+import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
 
@@ -27,12 +32,14 @@ function NewInvoice() {
   const [issueDate, setIssueDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [paidInvoice, setPaidInvoice] = useState(false);
+  const [birthdate, setBirthdate] = useState("");
+  const [gender, setGender] = useState("female");
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
 
   const GreenSwitch = withStyles({
     switchBase: {
-      color: red[300],
+      color: "#aa4994",
       "&$checked": {
         color: green[700],
       },
@@ -65,6 +72,18 @@ function NewInvoice() {
     const value = e.target.value;
     console.log("Expiry date: ", value);
     setExpiryDate(value);
+  };
+
+  const birthdateHandler = (e) => {
+    const value = e.target.value;
+    console.log("Birthdate: ", value);
+    setBirthdate(value);
+  };
+
+  const genderHandler = (e) => {
+    const value = e.target.value;
+    console.log("Gender: ", value);
+    setGender(value);
   };
 
   const onSubmit = (e) => {
@@ -101,12 +120,16 @@ function NewInvoice() {
       if (!validInvoice) {
         errors.issueDate = "Please enter a valid date.";
         setErrorMessages(errors);
-      } else {
-        validInvoice = greaterThanCurrentDate(expiryDate);
+      } else if (issueDate !== "") {
+        validInvoice = greaterThanFirstDate(expiryDate, issueDate);
         if (!validInvoice) {
-          errors.expiryDate = "The date is greater than current date";
+          errors.expiryDate = "The issue date is greater than expiry date";
           setErrorMessages(errors);
         }
+      }
+
+      if (Object.keys(errors).length === 0) {
+        setLoading(true);
       }
     } catch (error) {
       setLoading(false);
@@ -152,6 +175,9 @@ function NewInvoice() {
               error={!!errorMessages.docNumber}
               value={docNumber}
               onChange={docNumberHandler}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
             />
             {!!errorMessages.docNumber ? (
               <FormHelperText id="docNumberErrorMessage">
@@ -165,6 +191,7 @@ function NewInvoice() {
             id="txtIssueDate"
             label="Issue date"
             type="date"
+            format=""
             InputLabelProps={{
               shrink: true,
             }}
@@ -175,6 +202,9 @@ function NewInvoice() {
             helperText={errorMessages.issueDate}
             value={issueDate}
             onChange={issueDateHandler}
+            onKeyPress={(e) => {
+              e.key === "Enter" && e.preventDefault();
+            }}
           />
           <TextField
             id="txtExpiryDate"
@@ -189,22 +219,10 @@ function NewInvoice() {
             helperText={errorMessages.expiryDate}
             value={expiryDate}
             onChange={expiryDateHandler}
+            onKeyPress={(e) => {
+              e.key === "Enter" && e.preventDefault();
+            }}
           />{" "}
-        </div>
-        <div className={styles.divForm}>
-          <TextField
-            id="selectCategory"
-            select
-            label="Category"
-            helperText="Please select the invoice category"
-            variant="outlined"
-          >
-            {/**{currencies.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}**/}
-          </TextField>
         </div>
         <div className={styles.divForm}>
           <FormControl variant="outlined" style={{ marginRight: "15px" }}>
@@ -215,6 +233,9 @@ function NewInvoice() {
                 <InputAdornment position="start">€</InputAdornment>
               }
               labelWidth={70}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
             />
           </FormControl>
           <FormControl
@@ -228,6 +249,9 @@ function NewInvoice() {
                 <InputAdornment position="start">%</InputAdornment>
               }
               labelWidth={115}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
             />
           </FormControl>
           <FormControl variant="outlined">
@@ -263,13 +287,16 @@ function NewInvoice() {
             id="txtUSDExchangerate"
             variant="outlined"
             style={{ marginRight: "15px" }}
+            onKeyPress={(e) => {
+              e.key === "Enter" && e.preventDefault();
+            }}
           />
           <FormControl variant="outlined" style={{ marginRight: "50px" }}>
-            <InputLabel htmlFor="inputTotalAmouNtUSD">
+            <InputLabel htmlFor="inputTotalAmountUSD">
               USD Total amount
             </InputLabel>
             <OutlinedInput
-              id="inputTotalAmouNtUSD"
+              id="inputTotalAmountUSD"
               startAdornment={
                 <InputAdornment position="start">$</InputAdornment>
               }
@@ -284,15 +311,124 @@ function NewInvoice() {
         <Typography variant="h6" className={styles.title} noWrap>
           Member details
         </Typography>
+        <br />
+        <div className={styles.divForm}>
+          <TextField
+            id="txtBirthdate"
+            label="Birhdate"
+            type="date"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="outlined"
+            style={{ marginRight: "50px" }}
+            width="20ch"
+            error={!!errorMessages.birthdate}
+            helperText={errorMessages.birthdate}
+            value={birthdate}
+            onChange={birthdateHandler}
+            onKeyPress={(e) => {
+              e.key === "Enter" && e.preventDefault();
+            }}
+          />
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Gender</FormLabel>
+            <RadioGroup
+              aria-label="gender"
+              name="gender1"
+              value={gender}
+              onChange={genderHandler}
+              row
+            >
+              <FormControlLabel
+                value="female"
+                control={<Radio style={{ color: "#aa4994" }} />}
+                label="Female"
+              />
+              <FormControlLabel
+                value="male"
+                control={<Radio style={{ color: "#aa4994" }} />}
+                label="Male"
+              />
+              <FormControlLabel
+                value="other"
+                control={<Radio style={{ color: "#aa4994" }} />}
+                label="Other"
+              />
+            </RadioGroup>
+          </FormControl>{" "}
+        </div>
+        <div className={styles.divForm}>
+          <TextField
+            id="selectCategory"
+            select
+            label="Category"
+            helperText="Please select the category associated with the invoice"
+            variant="outlined"
+            style={{ marginRight: "50px" }}
+          >
+            {/**{currencies.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}**/}
+          </TextField>
+          <TextField
+            id="selectOccupation"
+            select
+            label="Occupation"
+            helperText="Please select the occupation(s) associated with the invoice"
+            variant="outlined"
+          >
+            {/**{currencies.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}**/}
+          </TextField>
+        </div>
+        <div className={styles.divForm}>
+          <TextField
+            id="selectCountry"
+            select
+            label="Country"
+            helperText="Please select the country"
+            variant="outlined"
+            style={{ marginRight: "50px" }}
+          >
+            {/**{currencies.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}**/}
+          </TextField>
+          <TextField
+            id="selectOffice"
+            select
+            label="Office"
+            helperText="Please select the office"
+            variant="outlined"
+          >
+            {/**{currencies.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}**/}
+          </TextField>
+        </div>
         <div className={styles.divButtonForm}>
           <Button
             variant="contained"
             color="primary"
             size="large"
-            startIcon={<SaveIcon />}
+            startIcon={loading ? null : <SaveIcon />}
             type="submit"
           >
-            Save
+            {loading ? (
+              <CircularProgress style={{ color: "white" }} size="30px" />
+            ) : (
+              "Save"
+            )}
           </Button>
         </div>
         <div className={styles.spacer}> </div>

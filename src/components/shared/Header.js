@@ -1,11 +1,15 @@
 import React from "react";
 import styles from "../../assets/css/Header.module.css";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
-import IconButton from "@material-ui/core/IconButton";
-import Tooltip from "@material-ui/core/Tooltip";
+import {
+  AppBar,
+  Toolbar,
+  Link,
+  Typography,
+  IconButton,
+  Tooltip,
+} from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
+import HelpIcon from "@material-ui/icons/Help";
 import { MetaMaskButton } from "rimble-ui";
 
 const srcP2PModelsLogo = "/images/logo-p2pmodels.png";
@@ -42,6 +46,16 @@ const Header = (props) => {
                   <SearchIcon />
                 </IconButton>
               </Tooltip>
+              <Tooltip title="What is a wallet?" arrow>
+                <Link
+                  color="inherit"
+                  href="https://ethereum.org/en/wallets/"
+                  target="_blank"
+                  style={{ marginRight: 5 }}
+                >
+                  <HelpIcon style={{ color: "#565956", fontSize: 25 }} />
+                </Link>
+              </Tooltip>
               <MetaMaskButton
                 onClick={props.clicked}
                 className={styles.metaMaskButton}
@@ -62,6 +76,16 @@ const Header = (props) => {
               >
                 <SearchIcon />
               </IconButton>
+              <Tooltip title="What is a wallet?" arrow>
+                <Link
+                  color="inherit"
+                  href="https://ethereum.org/en/wallets/"
+                  target="_blank"
+                  style={{ marginRight: 5 }}
+                >
+                  <HelpIcon style={{ color: "#565956", fontSize: 25 }} />
+                </Link>
+              </Tooltip>
               <MetaMaskButton disabled className={styles.metaMaskButton}>
                 Connect with MetaMask
               </MetaMaskButton>

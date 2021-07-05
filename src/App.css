@@ -9,3 +9,17 @@ body {
   color: #fff;
   background-color: #aa4994 !important;
 }
+
+/***Loader: Create animation when operations are executing.***/
+.loaderStyle {
+  background-color: rgba(255, 255, 255, 0.7);
+  top: 0;
+  left: 0;
+  height: 100%;
+  position: fixed;
+  width: 100%;
+  display: block;
+  height: 1000px;
+  text-align: center;
+  z-index: 999999999999999;
+}

@@ -14,9 +14,9 @@ import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
 
 //Using Hooks.
 function Home() {
-  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
-  const [isValidNetwork, setIsValidNetwork] = useState(false);
-  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(false);
+  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(true);
+  const [isValidNetwork, setIsValidNetwork] = useState(true);
+  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(true);
   const [networkName, setNetworkName] = useState("");
   const [reloadPage, setReloadPage] = useState(false);
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
@@ -64,9 +64,6 @@ function Home() {
   };
 
   useEffect(() => {
-    //Check if MetaMask is installed and the Rinkeby test network is selected.
-    checkWallet();
-
     //async function inside useEffect since we cannot declare useEffect as "async".
     async function checkWallet() {
       const validWallet = checkMetaMask();
@@ -91,6 +88,9 @@ function Home() {
         }
       }
     }
+
+    //Check if MetaMask is installed and the Rinkeby test network is selected.
+    checkWallet();
 
     //Listen if the network id changes. Reload the page for security.
     //See "chainChainged" section in https://docs.metamask.io/guide/ethereum-provider.html#events
