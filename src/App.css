@@ -23,3 +23,12 @@ body {
   text-align: center;
   z-index: 999999999999999;
 }
+
+/***Form date field***/
+/***Equivalent to:
+input#txtIssueDate.MuiInputBase-input.MuiOutlinedInput-input {
+  cursor: pointer !important;
+}**/
+input[type="date" i]:hover {
+  cursor: pointer !important;
+}

@@ -46,3 +46,7 @@ export function greaterThanFirstDate(dateValue1, dateValue2) {
     return true;
   }
 }
+
+export function checkDecimalNumberField(fieldValue) {
+  return true;
+}

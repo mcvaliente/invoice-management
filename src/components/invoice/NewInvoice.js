@@ -4,6 +4,7 @@ import {
   checkDateField,
   greaterThanCurrentDate,
   greaterThanFirstDate,
+  checkDecimalNumberField,
 } from "../../utils/FormFieldsValidation";
 import {
   FormControl,
@@ -28,11 +29,17 @@ import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
 
 function NewInvoice() {
+  const [paidInvoice, setPaidInvoice] = useState(false);
   const [docNumber, setDocNumber] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
-  const [paidInvoice, setPaidInvoice] = useState(false);
-  const [birthdate, setBirthdate] = useState("");
+  const [vatBase, setVatBase] = useState("");
+  const [vatPercentage, setVatPercentage] = useState("");
+  const [vatTotal, setVatTotal] = useState("");
+  const [eurTotalAmount, setEurTotalAmount] = useState("");
+  const [usdExchangeRate, setUsdExchangeRate] = useState("");
+  const [usdTotalAmount, setUsdTotalAmount] = useState("");
+  const [age, setAge] = useState("");
   const [gender, setGender] = useState("female");
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
@@ -74,10 +81,34 @@ function NewInvoice() {
     setExpiryDate(value);
   };
 
-  const birthdateHandler = (e) => {
+  const vatBaseHandler = (e) => {
     const value = e.target.value;
-    console.log("Birthdate: ", value);
-    setBirthdate(value);
+    console.log("VAT Base: ", value);
+    setVatBase(value);
+  };
+
+  const vatPercentageHandler = (e) => {
+    const value = e.target.value;
+    console.log("VAT Percentage: ", value);
+    setVatPercentage(value);
+    const percentageAmount = vatBase * value;
+    const eurAmount = parseFloat(vatBase) + parseFloat(percentageAmount);
+    setVatTotal(percentageAmount);
+    setEurTotalAmount(eurAmount);
+  };
+
+  const usdExchangeRateHandler = (e) => {
+    const value = e.target.value;
+    console.log("USD exchange rate: ", value);
+    setUsdExchangeRate(value);
+    const usdAmount = eurTotalAmount * value;
+    setUsdTotalAmount(usdAmount);
+  };
+
+  const ageHandler = (e) => {
+    const value = e.target.value;
+    console.log("Age: ", value);
+    setAge(value);
   };
 
   const genderHandler = (e) => {
@@ -110,7 +141,7 @@ function NewInvoice() {
       } else {
         validInvoice = greaterThanCurrentDate(issueDate);
         if (!validInvoice) {
-          errors.issueDate = "The date is greater that current date";
+          errors.issueDate = "The issue date is greater that current date";
           setErrorMessages(errors);
         }
       }
@@ -118,7 +149,7 @@ function NewInvoice() {
       //Check expiry date
       validInvoice = checkDateField(expiryDate);
       if (!validInvoice) {
-        errors.issueDate = "Please enter a valid date.";
+        errors.expiryDate = "Please enter a valid date.";
         setErrorMessages(errors);
       } else if (issueDate !== "") {
         validInvoice = greaterThanFirstDate(expiryDate, issueDate);
@@ -127,6 +158,9 @@ function NewInvoice() {
           setErrorMessages(errors);
         }
       }
+
+      //Check VAT Base
+      validInvoice = checkDecimalNumberField();
 
       if (Object.keys(errors).length === 0) {
         setLoading(true);
@@ -236,6 +270,8 @@ function NewInvoice() {
               onKeyPress={(e) => {
                 e.key === "Enter" && e.preventDefault();
               }}
+              value={vatBase}
+              onChange={vatBaseHandler}
             />
           </FormControl>
           <FormControl
@@ -252,9 +288,14 @@ function NewInvoice() {
               onKeyPress={(e) => {
                 e.key === "Enter" && e.preventDefault();
               }}
+              value={vatPercentage}
+              onChange={vatPercentageHandler}
             />
           </FormControl>
-          <FormControl variant="outlined">
+          <FormControl
+            variant="outlined"
+            style={{ backgroundColor: "#E9EDF6" }}
+          >
             <InputLabel htmlFor="inputVatTotal">VAT total</InputLabel>
             <OutlinedInput
               id="inputVatTotal"
@@ -264,11 +305,16 @@ function NewInvoice() {
               labelWidth={70}
               readOnly
               disabled
+              className={styles.fieldDisabled}
+              value={vatTotal}
             />
           </FormControl>
         </div>
         <div className={styles.divForm}>
-          <FormControl variant="outlined" style={{ marginRight: "15px" }}>
+          <FormControl
+            variant="outlined"
+            style={{ marginRight: "15px", backgroundColor: "#E9EDF6" }}
+          >
             <InputLabel htmlFor="inputTotalAmountEUR">
               EUR Total amount
             </InputLabel>
@@ -280,18 +326,25 @@ function NewInvoice() {
               labelWidth={130}
               readOnly
               disabled
+              className={styles.fieldDisabled}
+              value={eurTotalAmount}
             />
           </FormControl>
           <TextField
-            label="USD Exchange rate"
+            label="USD Exch. rate"
             id="txtUSDExchangerate"
             variant="outlined"
-            style={{ marginRight: "15px" }}
+            style={{ marginRight: "15px", width: "12%" }}
             onKeyPress={(e) => {
               e.key === "Enter" && e.preventDefault();
             }}
+            value={usdExchangeRate}
+            onChange={usdExchangeRateHandler}
           />
-          <FormControl variant="outlined" style={{ marginRight: "50px" }}>
+          <FormControl
+            variant="outlined"
+            style={{ backgroundColor: "#E9EDF6" }}
+          >
             <InputLabel htmlFor="inputTotalAmountUSD">
               USD Total amount
             </InputLabel>
@@ -303,6 +356,8 @@ function NewInvoice() {
               labelWidth={130}
               readOnly
               disabled
+              className={styles.fieldDisabled}
+              value={usdTotalAmount}
             />
           </FormControl>
         </div>
@@ -313,24 +368,29 @@ function NewInvoice() {
         </Typography>
         <br />
         <div className={styles.divForm}>
-          <TextField
-            id="txtBirthdate"
-            label="Birhdate"
-            type="date"
-            InputLabelProps={{
-              shrink: true,
-            }}
+          <FormControl
             variant="outlined"
-            style={{ marginRight: "50px" }}
-            width="20ch"
-            error={!!errorMessages.birthdate}
-            helperText={errorMessages.birthdate}
-            value={birthdate}
-            onChange={birthdateHandler}
-            onKeyPress={(e) => {
-              e.key === "Enter" && e.preventDefault();
-            }}
-          />
+            style={{ width: "10%", marginRight: "50px" }}
+            error={!!errorMessages.age}
+          >
+            <InputLabel htmlFor="inputAge">Age</InputLabel>
+            <OutlinedInput
+              id="inputAge"
+              labelWidth={30}
+              error={!!errorMessages.age}
+              value={age}
+              onChange={ageHandler}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
+              type="number"
+            />
+            {!!errorMessages.age ? (
+              <FormHelperText id="ageErrorMessage">
+                {errorMessages.age}
+              </FormHelperText>
+            ) : null}
+          </FormControl>
           <FormControl component="fieldset">
             <FormLabel component="legend">Gender</FormLabel>
             <RadioGroup
@@ -423,6 +483,7 @@ function NewInvoice() {
             size="large"
             startIcon={loading ? null : <SaveIcon />}
             type="submit"
+            disabled={loading}
           >
             {loading ? (
               <CircularProgress style={{ color: "white" }} size="30px" />
