@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   checkTextField,
   checkDateField,
   greaterThanCurrentDate,
   greaterThanFirstDate,
-  checkDecimalNumberField,
+  checkNumberField,
+  checkAgefield,
 } from "../../utils/FormFieldsValidation";
 import {
   FormControl,
@@ -43,6 +44,10 @@ function NewInvoice() {
   const [gender, setGender] = useState("female");
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
+
+  const inputVatBaseRef = useRef();
+  const inputVatPercentageRef = useRef();
+  const inputUsdExchangeRateRef = useRef();
 
   const GreenSwitch = withStyles({
     switchBase: {
@@ -83,31 +88,116 @@ function NewInvoice() {
 
   const vatBaseHandler = (e) => {
     const value = e.target.value;
-    console.log("VAT Base: ", value);
+    const newValue = value.replace(",", ".");
+    setVatBase(newValue);
+  };
+
+  const vatBaseValidationHandler = (e) => {
+    const value = e.target.value;
+    let errors = {};
+    setErrorMessages(errors);
+    let validField = checkNumberField(value);
+    if (!validField) {
+      errors.vatBase = "Please enter a valid amount";
+    } else if (!/^\d*(\.\d{2})$/.test(value)) {
+      validField = false;
+      errors.vatBase = "Please enter to 2 decimal places";
+    }
+    if (!validField) {
+      setErrorMessages(errors);
+      inputVatBaseRef.current.focus();
+    }
     setVatBase(value);
   };
 
   const vatPercentageHandler = (e) => {
     const value = e.target.value;
-    console.log("VAT Percentage: ", value);
-    setVatPercentage(value);
-    const percentageAmount = vatBase * value;
-    const eurAmount = parseFloat(vatBase) + parseFloat(percentageAmount);
-    setVatTotal(percentageAmount);
-    setEurTotalAmount(eurAmount);
+    const newValue = value.replace(",", ".");
+    setVatPercentage(newValue);
+  };
+
+  const vatPercentageValidationHandler = (e) => {
+    const value = e.target.value;
+    let errors = {};
+    setErrorMessages(errors);
+    //First check if we have a valid value in the VAT base field.
+    let validField = checkNumberField(vatBase);
+    if (!validField) {
+      inputVatBaseRef.current.focus();
+      errors.vatBase = "Please first enter invoice total amount";
+      setErrorMessages(errors);
+      setVatPercentage("");
+    } else {
+      validField = checkNumberField(value);
+      if (!validField) {
+        errors.vatPercentage = "Please enter a valid percentage";
+      } else if (!/^\d*(\.\d{2})$/.test(value)) {
+        validField = false;
+        errors.vatPercentage = "Please enter to 2 decimal places";
+      }
+      if (validField) {
+        const percentageAmount = Number(vatBase * (value / 100)).toFixed(2);
+        let eurAmount = Number(
+          parseFloat(vatBase) + parseFloat(percentageAmount)
+        ).toFixed(2);
+        setVatTotal(percentageAmount);
+        setEurTotalAmount(eurAmount);
+      } else {
+        setErrorMessages(errors);
+        inputVatPercentageRef.current.focus();
+      }
+      setVatPercentage(value);
+    }
   };
 
   const usdExchangeRateHandler = (e) => {
     const value = e.target.value;
-    console.log("USD exchange rate: ", value);
-    setUsdExchangeRate(value);
-    const usdAmount = eurTotalAmount * value;
-    setUsdTotalAmount(usdAmount);
+    const newValue = value.replace(",", ".");
+    setUsdExchangeRate(newValue);
+  };
+
+  const usdExchangeRateValidationHandler = (e) => {
+    const value = e.target.value;
+    //Check if the value is a number.
+    let errors = {};
+    setErrorMessages(errors);
+    //First check if we have a valid value in the VAT base field and in the VAT percentage.
+    let validField = checkNumberField(vatBase);
+    if (!validField) {
+      inputVatBaseRef.current.focus();
+      errors.vatBase = "Please first enter invoice total amount";
+      setErrorMessages(errors);
+      setUsdExchangeRate("");
+    } else {
+      validField = checkNumberField(vatPercentage);
+      if (!validField) {
+        inputVatPercentageRef.current.focus();
+        errors.vatPercentage = "Please first enter a percentage";
+        setErrorMessages(errors);
+        setUsdExchangeRate("");
+      } else {
+        validField = checkNumberField(value);
+        if (!validField) {
+          validField = false;
+          errors.usdExchangeRate = "Please enter a valid rate";
+        } else if (!/^\d*(\.\d{6})$/.test(value)) {
+          validField = false;
+          errors.usdExchangeRate = "Please enter to 6 decimal places";
+        }
+        if (validField) {
+          const usdAmount = Number(eurTotalAmount * value).toFixed(2);
+          setUsdTotalAmount(usdAmount);
+        } else {
+          setErrorMessages(errors);
+          inputUsdExchangeRateRef.current.focus();
+        }
+        setUsdExchangeRate(value);
+      }
+    }
   };
 
   const ageHandler = (e) => {
     const value = e.target.value;
-    console.log("Age: ", value);
     setAge(value);
   };
 
@@ -149,7 +239,7 @@ function NewInvoice() {
       //Check expiry date
       validInvoice = checkDateField(expiryDate);
       if (!validInvoice) {
-        errors.expiryDate = "Please enter a valid date.";
+        errors.expiryDate = "Please enter a valid date";
         setErrorMessages(errors);
       } else if (issueDate !== "") {
         validInvoice = greaterThanFirstDate(expiryDate, issueDate);
@@ -160,8 +250,49 @@ function NewInvoice() {
       }
 
       //Check VAT Base
-      validInvoice = checkDecimalNumberField();
+      console.log("VAT Base: ", vatBase);
+      validInvoice = checkTextField(vatBase);
+      if (!validInvoice) {
+        errors.vatBase = "Please enter a valid amount";
+        setErrorMessages(errors);
+      }
+      //Check VAT Percentage
+      console.log("VAT Percentage: ", vatPercentage);
+      validInvoice = checkTextField(vatPercentage);
+      if (!validInvoice) {
+        errors.vatPercentage = "Please enter a valid percentage";
+        setErrorMessages(errors);
+      }
+      //Check VAT Total
+      console.log("VAT Total: ", vatTotal);
 
+      //Check EUR Total amount
+      console.log("EUR Total amount: ", eurTotalAmount);
+
+      //Check USD Exchange rate
+      console.log("USD Exchange rate: ", usdExchangeRate);
+      validInvoice = checkTextField(usdExchangeRate);
+      if (!validInvoice) {
+        errors.usdExchangeRate = "Please enter a valid exchange rate";
+        setErrorMessages(errors);
+      }
+      //Check USD Total amount
+      console.log("USD Total amount: ", usdTotalAmount);
+
+      //Check Age
+      validInvoice = checkTextField(age);
+      if (!validInvoice) {
+        errors.age = "Please enter a valid age (18-99)";
+        setErrorMessages(errors);
+      } else {
+        validInvoice = checkAgefield(age);
+        if (!validInvoice) {
+          errors.age = "Please enter a valid age (18-99)";
+          setErrorMessages(errors);
+        }
+      }
+
+      //Check for errors.
       if (Object.keys(errors).length === 0) {
         setLoading(true);
       }
@@ -230,7 +361,7 @@ function NewInvoice() {
               shrink: true,
             }}
             variant="outlined"
-            style={{ marginRight: "50px" }}
+            style={{ marginRight: "15px" }}
             width="20ch"
             error={!!errorMessages.issueDate}
             helperText={errorMessages.issueDate}
@@ -259,10 +390,15 @@ function NewInvoice() {
           />{" "}
         </div>
         <div className={styles.divForm}>
-          <FormControl variant="outlined" style={{ marginRight: "15px" }}>
+          <FormControl
+            variant="outlined"
+            style={{ marginRight: "15px" }}
+            error={!!errorMessages.vatBase}
+          >
             <InputLabel htmlFor="inputVatBase">VAT base</InputLabel>
             <OutlinedInput
               id="inputVatBase"
+              placeholder="0.00"
               startAdornment={
                 <InputAdornment position="start">€</InputAdornment>
               }
@@ -272,15 +408,25 @@ function NewInvoice() {
               }}
               value={vatBase}
               onChange={vatBaseHandler}
+              onBlur={vatBaseValidationHandler}
+              error={!!errorMessages.vatBase}
+              inputRef={inputVatBaseRef}
             />
+            {!!errorMessages.vatBase ? (
+              <FormHelperText id="vatBaseErrorMessage">
+                {errorMessages.vatBase}
+              </FormHelperText>
+            ) : null}
           </FormControl>
           <FormControl
             variant="outlined"
-            style={{ marginRight: "50px", width: "10%" }}
+            style={{ marginRight: "15px", width: "15%" }}
+            error={!!errorMessages.vatPercentage}
           >
             <InputLabel htmlFor="inputVatPercentage">VAT percentage</InputLabel>
             <OutlinedInput
               id="inputVatPercentage"
+              placeholder="0.00"
               startAdornment={
                 <InputAdornment position="start">%</InputAdornment>
               }
@@ -290,7 +436,15 @@ function NewInvoice() {
               }}
               value={vatPercentage}
               onChange={vatPercentageHandler}
+              onBlur={vatPercentageValidationHandler}
+              error={!!errorMessages.vatPercentage}
+              inputRef={inputVatPercentageRef}
             />
+            {!!errorMessages.vatPercentage ? (
+              <FormHelperText id="vatPercentageErrorMessage">
+                {errorMessages.vatPercentage}
+              </FormHelperText>
+            ) : null}
           </FormControl>
           <FormControl
             variant="outlined"
@@ -305,7 +459,6 @@ function NewInvoice() {
               labelWidth={70}
               readOnly
               disabled
-              className={styles.fieldDisabled}
               value={vatTotal}
             />
           </FormControl>
@@ -326,21 +479,39 @@ function NewInvoice() {
               labelWidth={130}
               readOnly
               disabled
-              className={styles.fieldDisabled}
               value={eurTotalAmount}
             />
           </FormControl>
-          <TextField
-            label="USD Exch. rate"
-            id="txtUSDExchangerate"
+          <FormControl
             variant="outlined"
-            style={{ marginRight: "15px", width: "12%" }}
-            onKeyPress={(e) => {
-              e.key === "Enter" && e.preventDefault();
-            }}
-            value={usdExchangeRate}
-            onChange={usdExchangeRateHandler}
-          />
+            style={{ marginRight: "15px", width: "15%" }}
+            error={!!errorMessages.usdExchangeRate}
+          >
+            <InputLabel htmlFor="inputUsdExchangeRate">
+              USD Exchange rate
+            </InputLabel>
+            <OutlinedInput
+              id="inputUsdExchangeRate"
+              placeholder="0.000000"
+              startAdornment={
+                <InputAdornment position="start">#</InputAdornment>
+              }
+              labelWidth={145}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
+              value={usdExchangeRate}
+              onChange={usdExchangeRateHandler}
+              onBlur={usdExchangeRateValidationHandler}
+              error={!!errorMessages.usdExchangeRate}
+              inputRef={inputUsdExchangeRateRef}
+            />
+            {!!errorMessages.usdExchangeRate ? (
+              <FormHelperText id="usdExchangeRateErrorMessage">
+                {errorMessages.usdExchangeRate}
+              </FormHelperText>
+            ) : null}
+          </FormControl>
           <FormControl
             variant="outlined"
             style={{ backgroundColor: "#E9EDF6" }}
@@ -356,7 +527,6 @@ function NewInvoice() {
               labelWidth={130}
               readOnly
               disabled
-              className={styles.fieldDisabled}
               value={usdTotalAmount}
             />
           </FormControl>
@@ -370,7 +540,7 @@ function NewInvoice() {
         <div className={styles.divForm}>
           <FormControl
             variant="outlined"
-            style={{ width: "10%", marginRight: "50px" }}
+            style={{ width: "15%", marginRight: "15px" }}
             error={!!errorMessages.age}
           >
             <InputLabel htmlFor="inputAge">Age</InputLabel>
@@ -383,7 +553,11 @@ function NewInvoice() {
               onKeyPress={(e) => {
                 e.key === "Enter" && e.preventDefault();
               }}
-              type="number"
+              inputProps={{
+                type: "number",
+                min: 18,
+                max: 99,
+              }}
             />
             {!!errorMessages.age ? (
               <FormHelperText id="ageErrorMessage">
@@ -425,7 +599,7 @@ function NewInvoice() {
             label="Category"
             helperText="Please select the category associated with the invoice"
             variant="outlined"
-            style={{ marginRight: "50px" }}
+            style={{ marginRight: "15px" }}
           >
             {/**{currencies.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -454,7 +628,7 @@ function NewInvoice() {
             label="Country"
             helperText="Please select the country"
             variant="outlined"
-            style={{ marginRight: "50px" }}
+            style={{ marginRight: "15px" }}
           >
             {/**{currencies.map((option) => (
               <MenuItem key={option.value} value={option.value}>

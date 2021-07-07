@@ -10,15 +10,20 @@ export function getWeb3() {
 }
 
 export function checkMetaMask() {
-  //Check if the browser is running MetaMask and differentiate MetaMask from other
-  //ethereum-compatible browsers.
-  //Ref: https://docs.metamask.io/guide/getting-started.html#basic-considerations
-  //If true => MetaMask is installed.
-  if (typeof window.ethereum !== "undefined") {
-    console.log("MetaMask is installed!");
-    return true;
-  } else {
-    console.log("MetaMask is not installed.");
+  try {
+    //Check if the browser is running MetaMask and differentiate MetaMask from other
+    //ethereum-compatible browsers.
+    //Ref: https://docs.metamask.io/guide/getting-started.html#basic-considerations
+    //If true => MetaMask is installed.
+    if (typeof window.ethereum !== "undefined") {
+      console.log("MetaMask is installed!");
+      return true;
+    } else {
+      console.log("MetaMask is not installed.");
+      return false;
+    }
+  } catch (error) {
+    console.error(error);
     return false;
   }
 }
@@ -95,12 +100,17 @@ export async function enableMetaMask() {
 }
 
 export function getCurrentAccount() {
-  if (typeof window.ethereum !== "undefined") {
-    //Returns null if an account is not selected.
-    const currentAccount = window.ethereum.selectedAddress;
-    console.log("Current address: " + currentAccount);
-    return currentAccount;
-  } else {
+  try {
+    if (typeof window.ethereum !== "undefined") {
+      //Returns null if an account is not selected.
+      const currentAccount = window.ethereum.selectedAddress;
+      console.log("Current address: " + currentAccount);
+      return currentAccount;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error(error);
     return null;
   }
 }
