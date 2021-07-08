@@ -1,12 +1,18 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   checkTextField,
   checkDateField,
   greaterThanCurrentDate,
   greaterThanFirstDate,
   checkNumberField,
-  checkAgefield,
 } from "../../utils/FormFieldsValidation";
+import {
+  cooperatives,
+  countries,
+  offices,
+  occupationCategories,
+  occupations,
+} from "../../utils/invoiceconfig";
 import {
   FormControl,
   FormControlLabel,
@@ -23,6 +29,7 @@ import {
   RadioGroup,
   FormLabel,
   CircularProgress,
+  MenuItem,
 } from "@material-ui/core";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
@@ -32,8 +39,8 @@ import styles from "../../assets/css/NewInvoice.module.css";
 function NewInvoice() {
   const [paidInvoice, setPaidInvoice] = useState(false);
   const [docNumber, setDocNumber] = useState("");
-  const [issueDate, setIssueDate] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [vatBase, setVatBase] = useState("");
   const [vatPercentage, setVatPercentage] = useState("");
   const [vatTotal, setVatTotal] = useState("");
@@ -42,6 +49,12 @@ function NewInvoice() {
   const [usdTotalAmount, setUsdTotalAmount] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("female");
+  const [currentCooperative, setCurrentCooperative] = useState("");
+  const [currentCountry, setCurrentCountry] = useState("");
+  const [currentOffice, setCurrentOffice] = useState("");
+  const [currentCategory, setCurrentCategory] = useState("");
+  const [currentOccupation, setCurrentOccupation] = useState("");
+  const [selectedOccupations, setSelectedOccupations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
 
@@ -63,6 +76,71 @@ function NewInvoice() {
     track: {},
   })(Switch);
 
+  //useEffect executes only when the memberID state changes.
+  useEffect(() => {
+    //Set the initial values of the Select controls for
+    //Cooperatives, Countries, Offices, Categories and
+    //Occupations.
+
+    //Cooperatives
+    setCurrentCooperative("cooperative00");
+
+    //Countries
+    setCurrentCountry("country00");
+
+    //Offices
+    setCurrentOffice("office00");
+
+    //Categories
+    setCurrentCategory("category00");
+
+    //Occupations
+    setCurrentOccupation("occupation00");
+    //We must to include [] in order to execute this only on Mount.
+  }, []);
+
+  const cooperativeSelectHandler = (e) => {
+    //Reset the errors.
+    setErrorMessages({});
+    if (e.target.value !== "cooperative00") {
+      setCurrentCooperative(e.target.value);
+    }
+  };
+
+  const countrySelectHandler = (e) => {
+    setErrorMessages({});
+    if (e.target.value !== "country00") {
+      setCurrentCountry(e.target.value);
+    }
+  };
+
+  const officeSelectHandler = (e) => {
+    setErrorMessages({});
+    if (e.target.value !== "office00") {
+      setCurrentOffice(e.target.value);
+    }
+  };
+
+  const categorySelectHandler = (e) => {
+    setErrorMessages({});
+    if (e.target.value !== "category00") {
+      setCurrentCategory(e.target.value);
+    }
+  };
+
+  const occupationSelectHandler = (e) => {
+    let newOccupation = e.target.value;
+    if (newOccupation !== "occupation00") {
+      const occupationsList = [...selectedOccupations];
+      setCurrentOccupation("occupation00");
+      //Check if the occupation is in the list yet.
+      if (!occupationsList.includes(newOccupation)) {
+        occupationsList.push(newOccupation);
+        setSelectedOccupations(occupationsList);
+      }
+    }
+  };
+
   const paidInvoiceHandler = (e) => {
     const value = e.target.checked;
     setPaidInvoice(value);
@@ -74,16 +152,16 @@ function NewInvoice() {
     setDocNumber(value);
   };
 
-  const issueDateHandler = (e) => {
+  const invoiceDateHandler = (e) => {
     const value = e.target.value;
-    console.log("Issue date: ", value);
-    setIssueDate(value);
+    console.log("Invoice date: ", value);
+    setInvoiceDate(value);
   };
 
-  const expiryDateHandler = (e) => {
+  const dueDateHandler = (e) => {
     const value = e.target.value;
-    console.log("Expiry date: ", value);
-    setExpiryDate(value);
+    console.log("Due date: ", value);
+    setDueDate(value);
   };
 
   const vatBaseHandler = (e) => {
@@ -203,7 +281,6 @@ function NewInvoice() {
 
   const genderHandler = (e) => {
     const value = e.target.value;
-    console.log("Gender: ", value);
     setGender(value);
   };
 
@@ -223,28 +300,28 @@ function NewInvoice() {
         setErrorMessages(errors);
       }
 
-      //Check issue date
-      validInvoice = checkDateField(issueDate);
+      //Check invoice date
+      validInvoice = checkDateField(invoiceDate);
       if (!validInvoice) {
-        errors.issueDate = "Please enter a valid date";
+        errors.invoiceDate = "Please enter a date";
         setErrorMessages(errors);
       } else {
-        validInvoice = greaterThanCurrentDate(issueDate);
+        validInvoice = greaterThanCurrentDate(invoiceDate);
         if (!validInvoice) {
-          errors.issueDate = "The issue date is greater that current date";
+          errors.invoiceDate = "The invoice date is greater that current date";
           setErrorMessages(errors);
         }
       }
 
-      //Check expiry date
-      validInvoice = checkDateField(expiryDate);
+      //Check due date
+      validInvoice = checkDateField(dueDate);
       if (!validInvoice) {
-        errors.expiryDate = "Please enter a valid date";
+        errors.dueDate = "Please enter a date";
         setErrorMessages(errors);
-      } else if (issueDate !== "") {
-        validInvoice = greaterThanFirstDate(expiryDate, issueDate);
+      } else if (invoiceDate !== "") {
+        validInvoice = greaterThanFirstDate(dueDate, invoiceDate);
         if (!validInvoice) {
-          errors.expiryDate = "The issue date is greater than expiry date";
+          errors.dueDate = "The invoice date is greater than the due date";
           setErrorMessages(errors);
         }
       }
@@ -253,14 +330,14 @@ function NewInvoice() {
       console.log("VAT Base: ", vatBase);
       validInvoice = checkTextField(vatBase);
       if (!validInvoice) {
-        errors.vatBase = "Please enter a valid amount";
+        errors.vatBase = "Please enter an amount";
         setErrorMessages(errors);
       }
       //Check VAT Percentage
       console.log("VAT Percentage: ", vatPercentage);
       validInvoice = checkTextField(vatPercentage);
       if (!validInvoice) {
-        errors.vatPercentage = "Please enter a valid percentage";
+        errors.vatPercentage = "Please enter a percentage";
         setErrorMessages(errors);
       }
       //Check VAT Total
@@ -273,7 +350,7 @@ function NewInvoice() {
       console.log("USD Exchange rate: ", usdExchangeRate);
       validInvoice = checkTextField(usdExchangeRate);
       if (!validInvoice) {
-        errors.usdExchangeRate = "Please enter a valid exchange rate";
+        errors.usdExchangeRate = "Please enter a rate";
         setErrorMessages(errors);
       }
       //Check USD Total amount
@@ -282,15 +359,12 @@ function NewInvoice() {
       //Check Age
       validInvoice = checkTextField(age);
       if (!validInvoice) {
-        errors.age = "Please enter a valid age (18-99)";
+        errors.age = "Please enter member age";
         setErrorMessages(errors);
-      } else {
-        validInvoice = checkAgefield(age);
-        if (!validInvoice) {
-          errors.age = "Please enter a valid age (18-99)";
-          setErrorMessages(errors);
-        }
       }
+
+      //Check Age
+      console.log("Gender: ", gender);
 
       //Check for errors.
       if (Object.keys(errors).length === 0) {
@@ -332,11 +406,11 @@ function NewInvoice() {
             style={{ width: "40%", marginRight: "50px" }}
             error={!!errorMessages.docNumber}
           >
-            <InputLabel htmlFor="inputInvoiceId">Number</InputLabel>
+            <InputLabel htmlFor="inputInvoiceId">Invoice</InputLabel>
             <OutlinedInput
               id="inputInvoiceId"
-              labelWidth={60}
-              placeholder="Document number"
+              labelWidth={50}
+              placeholder="Invoice document number"
               error={!!errorMessages.docNumber}
               value={docNumber}
               onChange={docNumberHandler}
@@ -353,8 +427,8 @@ function NewInvoice() {
         </div>
         <div className={styles.divForm}>
           <TextField
-            id="txtIssueDate"
-            label="Issue date"
+            id="txtInvoiceDate"
+            label="Invoice date"
             type="date"
             format=""
             InputLabelProps={{
@@ -363,27 +437,27 @@ function NewInvoice() {
             variant="outlined"
             style={{ marginRight: "15px" }}
             width="20ch"
-            error={!!errorMessages.issueDate}
-            helperText={errorMessages.issueDate}
-            value={issueDate}
-            onChange={issueDateHandler}
+            error={!!errorMessages.invoiceDate}
+            helperText={errorMessages.invoiceDate}
+            value={invoiceDate}
+            onChange={invoiceDateHandler}
             onKeyPress={(e) => {
               e.key === "Enter" && e.preventDefault();
             }}
           />
           <TextField
-            id="txtExpiryDate"
-            label="Expiry date"
+            id="txtDueDate"
+            label="Due date"
             type="date"
             InputLabelProps={{
               shrink: true,
             }}
             variant="outlined"
             width="20ch"
-            error={!!errorMessages.expiryDate}
-            helperText={errorMessages.expiryDate}
-            value={expiryDate}
-            onChange={expiryDateHandler}
+            error={!!errorMessages.dueDate}
+            helperText={errorMessages.dueDate}
+            value={dueDate}
+            onChange={dueDateHandler}
             onKeyPress={(e) => {
               e.key === "Enter" && e.preventDefault();
             }}
@@ -594,18 +668,76 @@ function NewInvoice() {
         </div>
         <div className={styles.divForm}>
           <TextField
+            id="selectCooperative"
+            select
+            label="Cooperative"
+            helperText="Please select a cooperative"
+            variant="outlined"
+            style={{ marginRight: "15px" }}
+            value={currentCooperative}
+            onChange={cooperativeSelectHandler}
+          >
+            {cooperatives.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            id="selectCountry"
+            select
+            label="Country"
+            helperText="Please select a country"
+            variant="outlined"
+            style={{ marginRight: "15px" }}
+            value={currentCountry}
+            onChange={countrySelectHandler}
+          >
+            {countries.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            id="selectOffice"
+            select
+            label="Office"
+            helperText="Please select an office"
+            variant="outlined"
+            disabled={
+              currentCooperative === "cooperative00" ||
+              currentCountry === "country00"
+            }
+            value={currentOffice}
+            onChange={officeSelectHandler}
+          >
+            {offices.map((option) =>
+              option.cooperative === currentCooperative &&
+              option.country === currentCountry ? (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ) : null
+            )}
+          </TextField>
+        </div>
+        <div className={styles.divForm}>
+          <TextField
             id="selectCategory"
             select
             label="Category"
             helperText="Please select the category associated with the invoice"
             variant="outlined"
             style={{ marginRight: "15px" }}
+            value={currentCategory}
+            onChange={categorySelectHandler}
           >
-            {/**{currencies.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
+            {occupationCategories.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.name}
               </MenuItem>
-            ))}**/}
+            ))}
           </TextField>
           <TextField
             id="selectOccupation"
@@ -613,41 +745,21 @@ function NewInvoice() {
             label="Occupation"
             helperText="Please select the occupation(s) associated with the invoice"
             variant="outlined"
+            value={currentOccupation}
+            onChange={occupationSelectHandler}
+            disabled={
+              currentCategory === "category00" ||
+              currentCooperative === "cooperative00"
+            }
           >
-            {/**{currencies.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}**/}
-          </TextField>
-        </div>
-        <div className={styles.divForm}>
-          <TextField
-            id="selectCountry"
-            select
-            label="Country"
-            helperText="Please select the country"
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-          >
-            {/**{currencies.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}**/}
-          </TextField>
-          <TextField
-            id="selectOffice"
-            select
-            label="Office"
-            helperText="Please select the office"
-            variant="outlined"
-          >
-            {/**{currencies.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}**/}
+            {occupations.map((option) =>
+              option.category === currentCategory &&
+              option.cooperative === currentCooperative ? (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ) : null
+            )}
           </TextField>
         </div>
         <div className={styles.divButtonForm}>

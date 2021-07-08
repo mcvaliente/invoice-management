@@ -54,13 +54,3 @@ export function checkNumberField(fieldValue) {
   }
   return true;
 }
-
-export function checkAgefield(fieldValue) {
-  const numberValue = parseInt(fieldValue);
-  if (isNaN(numberValue)) {
-    return false;
-  } else if (numberValue >= 18 && numberValue < 99) {
-    return true;
-  }
-  return false;
-}
