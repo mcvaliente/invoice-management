@@ -54,3 +54,12 @@ export function checkNumberField(fieldValue) {
   }
   return true;
 }
+
+export function checkListField(fieldValue) {
+  //Check that at least the list contains one element.
+  if (typeof fieldValue === undefined || fieldValue.length === 0) {
+    return false;
+  } else {
+    return true;
+  }
+}

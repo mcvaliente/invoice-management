@@ -5,6 +5,7 @@ import {
   greaterThanCurrentDate,
   greaterThanFirstDate,
   checkNumberField,
+  checkListField,
 } from "../../utils/FormFieldsValidation";
 import {
   cooperatives,
@@ -35,6 +36,7 @@ import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
+import InvoiceOccupations from "./InvoiceOccupations";
 
 function NewInvoice() {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -50,6 +52,7 @@ function NewInvoice() {
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("female");
   const [currentCooperative, setCurrentCooperative] = useState("");
+  const [selectedCountries, setSelectedCountries] = useState([]);
   const [currentCountry, setCurrentCountry] = useState("");
   const [currentOffice, setCurrentOffice] = useState("");
   const [currentCategory, setCurrentCategory] = useState("");
@@ -104,6 +107,11 @@ function NewInvoice() {
     setErrorMessages({});
     if (e.target.value !== "cooperative00") {
       setCurrentCooperative(e.target.value);
+      const selectedcooperative = cooperatives.find(
+        (option) => option.id === e.target.value
+      );
+      setSelectedCountries(selectedcooperative.countries);
+      console.log("selected countries: ", selectedcooperative.countries);
     }
   };
 
@@ -141,6 +149,12 @@ function NewInvoice() {
     }
   };
 
+  const deleteMemberOccupationHandler = (occupationIndex) => {
+    const occupations = [...selectedOccupations];
+    occupations.splice(occupationIndex, 1);
+    setSelectedOccupations(occupations);
+  };
+
   const paidInvoiceHandler = (e) => {
     const value = e.target.checked;
     setPaidInvoice(value);
@@ -148,19 +162,16 @@ function NewInvoice() {
 
   const docNumberHandler = (e) => {
     const value = e.target.value;
-    console.log("Invoice doc number: ", value);
     setDocNumber(value);
   };
 
   const invoiceDateHandler = (e) => {
     const value = e.target.value;
-    console.log("Invoice date: ", value);
     setInvoiceDate(value);
   };
 
   const dueDateHandler = (e) => {
     const value = e.target.value;
-    console.log("Due date: ", value);
     setDueDate(value);
   };
 
@@ -293,7 +304,11 @@ function NewInvoice() {
     try {
       //FIELD VALIDATION
 
+      //Check Invoice paid
+      console.log("Paid invoice:", paidInvoice);
+
       //Check invoice document number
+      console.log("Invoice number: ", docNumber);
       validInvoice = checkTextField(docNumber);
       if (!validInvoice) {
         errors.docNumber = "Please enter the invoice document number";
@@ -301,6 +316,7 @@ function NewInvoice() {
       }
 
       //Check invoice date
+      console.log("Invoice date: ", invoiceDate);
       validInvoice = checkDateField(invoiceDate);
       if (!validInvoice) {
         errors.invoiceDate = "Please enter a date";
@@ -314,6 +330,7 @@ function NewInvoice() {
       }
 
       //Check due date
+      console.log("Due date: ", dueDate);
       validInvoice = checkDateField(dueDate);
       if (!validInvoice) {
         errors.dueDate = "Please enter a date";
@@ -357,14 +374,59 @@ function NewInvoice() {
       console.log("USD Total amount: ", usdTotalAmount);
 
       //Check Age
+      console.log("Age: ", age);
       validInvoice = checkTextField(age);
       if (!validInvoice) {
         errors.age = "Please enter member age";
         setErrorMessages(errors);
       }
 
-      //Check Age
+      //Check Gender
       console.log("Gender: ", gender);
+
+      //Check Cooperative
+      console.log("Cooperative: ", currentCooperative);
+      validInvoice = checkTextField(currentCooperative);
+      if (!validInvoice || currentCooperative === "cooperative00") {
+        errors.cooperative = "Please select a cooperative";
+        setErrorMessages(errors);
+      }
+
+      //Check Country
+      console.log("Country: ", currentCountry);
+      validInvoice = checkTextField(currentCountry);
+      if (
+        !validInvoice ||
+        (currentCountry === "country00" &&
+          currentCooperative !== "cooperative00")
+      ) {
+        errors.country = "Please select a country";
+        setErrorMessages(errors);
+      }
+
+      //Check Office
+      console.log("Office: ", currentOffice);
+      validInvoice = checkTextField(currentOffice);
+      if (
+        !validInvoice ||
+        (currentOffice === "office00" && currentCountry !== "country00")
+      ) {
+        errors.office = "Please select an office";
+        setErrorMessages(errors);
+      }
+
+      //Check occupations
+      console.log("Occupations: ", selectedOccupations);
+      validInvoice = checkListField(selectedOccupations);
+      if (!validInvoice) {
+        if (currentCategory === "category00") {
+          errors.category =
+            "Please select a category associated with the invoice";
+        } else {
+          errors.occupations = "Please select an occupation for the category";
+        }
+        setErrorMessages(errors);
+      }
 
       //Check for errors.
       if (Object.keys(errors).length === 0) {
@@ -671,12 +733,16 @@ function NewInvoice() {
             id="selectCooperative"
             select
             label="Cooperative"
-            helperText="Please select a cooperative"
             variant="outlined"
             style={{ marginRight: "15px" }}
             value={currentCooperative}
             onChange={cooperativeSelectHandler}
+            error={!!errorMessages.cooperative}
+            helperText={errorMessages.cooperative}
           >
+            <MenuItem key="cooperative00" value="cooperative00">
+              Select a cooperative...
+            </MenuItem>
             {cooperatives.map((option) => (
               <MenuItem key={option.id} value={option.id}>
                 {option.name}
@@ -687,23 +753,29 @@ function NewInvoice() {
             id="selectCountry"
             select
             label="Country"
-            helperText="Please select a country"
             variant="outlined"
             style={{ marginRight: "15px" }}
             value={currentCountry}
             onChange={countrySelectHandler}
+            disabled={currentCooperative === "cooperative00"}
+            error={!!errorMessages.country}
+            helperText={errorMessages.country}
           >
-            {countries.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
+            <MenuItem key="country00" value="country00">
+              Select a country...
+            </MenuItem>
+            {countries.map((option) =>
+              selectedCountries.includes(option.id) ? (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ) : null
+            )}
           </TextField>
           <TextField
             id="selectOffice"
             select
             label="Office"
-            helperText="Please select an office"
             variant="outlined"
             disabled={
               currentCooperative === "cooperative00" ||
@@ -711,7 +783,12 @@ function NewInvoice() {
             }
             value={currentOffice}
             onChange={officeSelectHandler}
+            error={!!errorMessages.office}
+            helperText={errorMessages.office}
           >
+            <MenuItem key="office00" value="office00">
+              Select an office...
+            </MenuItem>
             {offices.map((option) =>
               option.cooperative === currentCooperative &&
               option.country === currentCountry ? (
@@ -727,12 +804,16 @@ function NewInvoice() {
             id="selectCategory"
             select
             label="Category"
-            helperText="Please select the category associated with the invoice"
             variant="outlined"
             style={{ marginRight: "15px" }}
             value={currentCategory}
             onChange={categorySelectHandler}
+            error={!!errorMessages.category}
+            helperText={errorMessages.category}
           >
+            <MenuItem key="category00" value="category00">
+              Select a category...
+            </MenuItem>
             {occupationCategories.map((option) => (
               <MenuItem key={option.id} value={option.id}>
                 {option.name}
@@ -743,24 +824,31 @@ function NewInvoice() {
             id="selectOccupation"
             select
             label="Occupation"
-            helperText="Please select the occupation(s) associated with the invoice"
             variant="outlined"
             value={currentOccupation}
             onChange={occupationSelectHandler}
-            disabled={
-              currentCategory === "category00" ||
-              currentCooperative === "cooperative00"
-            }
+            disabled={currentCategory === "category00"}
+            error={!!errorMessages.occupations}
+            helperText={errorMessages.occupations}
           >
+            <MenuItem key="occupation00" value="occupation00">
+              Select an occupation...
+            </MenuItem>
             {occupations.map((option) =>
-              option.category === currentCategory &&
-              option.cooperative === currentCooperative ? (
+              option.category === currentCategory ? (
                 <MenuItem key={option.id} value={option.id}>
                   {option.name}
                 </MenuItem>
               ) : null
             )}
           </TextField>
+        </div>
+        <div className={styles.memberInfoOccupationSelectedList}>
+          <InvoiceOccupations
+            occupations={selectedOccupations}
+            clicked={deleteMemberOccupationHandler}
+            canDelete="true"
+          />
         </div>
         <div className={styles.divButtonForm}>
           <Button
