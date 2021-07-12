@@ -5,61 +5,73 @@ pragma solidity >=0.7.0 <0.9.0;
 contract Invoice {
     
     struct InvoiceInfo {
-        bytes16 issueDate;
-        bytes16 expiryDate; //dd/mm/aaaa
-        bytes16 categoryId;
+        bool paid;
+        bytes16 invoiceDate; //aaaa-mm-dd
+        bytes16 dueDate; //aaaa-mm-dd
+        CostInfo amount ;
         MemberInfo member;
         bool validInvoice;
     }
     
-    struct MemberInfo {
-        bytes32 memberId; //hash of the id of the member
-        bytes16 gender; //F (Female) M (Male) O (Other)
+    struct CostInfo {
+        bytes16 vatBase; //2 decimal points
+        bytes16 vatPercentage; //2 decimal points
+        bytes16 usdExchangeRate; //6 decimal points
+
+    }
+ 
+     struct MemberInfo {
+        bytes16[] occupations;
+        bytes16 gender; //female, male, other
         uint256 age;
         LocationInfo location;
-        bytes16 occupationId;
-        
     }
     
     struct LocationInfo {
-        bytes32 office;
-        bytes32 county;
+        bytes32 cooperative;
         bytes32 country;
+        bytes32 office;
     }
     
     mapping(bytes32 => InvoiceInfo) invoices; //bytes32 represents invoiceId
     uint32 deployedInvoices;
     
     function createInvoice(
+        bool paid,
         bytes32 invoiceId,
-        bytes32 memberId,
         bytes32[] memory location,
         bytes16[] memory invoiceDates,
-        bytes16 categoryId,
+        bytes16[] memory costData,
+        bytes16[] memory occupations,
         bytes16 gender,
-        bytes16 occupationId,
         uint256 age
 
     ) public {
 
         LocationInfo memory locationData = LocationInfo({
-            office: location[0],
-            county: location[1],
-            country: location[2]
+            cooperative: location[0],
+            country: location[1],
+            office: location[2]
         });
         
         MemberInfo memory memberData = MemberInfo({
-            memberId: memberId,
             gender: gender,
             age: age,
             location: locationData,
-            occupationId: occupationId
+            occupations: occupations
         });
         
+        CostInfo memory amountData = CostInfo({
+            vatBase: costData[0],
+            vatPercentage: costData[1],
+            usdExchangeRate: costData[2]
+        });
+
         InvoiceInfo memory invoiceData = InvoiceInfo({
-            issueDate: invoiceDates[0],
-            expiryDate: invoiceDates[1],
-            categoryId: categoryId,
+            paid: paid,
+            invoiceDate: invoiceDates[0],
+            dueDate: invoiceDates[1],
+            amount: amountData,
             member: memberData,
             validInvoice: true
         });
@@ -84,9 +96,7 @@ contract Invoice {
         public
         view
         returns (
-            bytes32,
-            bytes16,
-            bytes16,
+            bool,
             bytes16,
             bytes16,
             bytes16,
@@ -94,16 +104,30 @@ contract Invoice {
         )
     {
         return (
-            invoices[invoiceId].member.memberId,
-            invoices[invoiceId].issueDate,
-            invoices[invoiceId].expiryDate,
-            invoices[invoiceId].categoryId,
+            invoices[invoiceId].paid,
+            invoices[invoiceId].invoiceDate,
+            invoices[invoiceId].dueDate,
             invoices[invoiceId].member.gender,
-            invoices[invoiceId].member.occupationId,
             invoices[invoiceId].member.age
         );
     }
     
+    function getInvoicingInfo(bytes32 invoiceId)
+        public
+        view
+        returns (
+            bytes16,
+            bytes16,
+            bytes16
+        )
+    {
+        return (
+            invoices[invoiceId].amount.vatBase,
+            invoices[invoiceId].amount.vatPercentage,
+            invoices[invoiceId].amount.usdExchangeRate
+        );
+    }
+
     function getMemberLocation(bytes32 invoiceId)
         public
         view
@@ -114,9 +138,9 @@ contract Invoice {
         )
     {
         return (
-            invoices[invoiceId].member.location.office,
-            invoices[invoiceId].member.location.county,
-            invoices[invoiceId].member.location.country
+            invoices[invoiceId].member.location.cooperative,
+            invoices[invoiceId].member.location.country,
+            invoices[invoiceId].member.location.office
         );
     }
     

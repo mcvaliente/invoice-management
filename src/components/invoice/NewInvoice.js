@@ -61,9 +61,18 @@ function NewInvoice() {
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
 
+  const inputDocNumberRef = useRef();
+  const inputInvoiceDateRef = useRef();
+  const inputDueDateRef = useRef();
   const inputVatBaseRef = useRef();
   const inputVatPercentageRef = useRef();
   const inputUsdExchangeRateRef = useRef();
+  const inputAgeRef = useRef();
+  const inputCooperativeRef = useRef();
+  const inputCountryRef = useRef();
+  const inputOfficeRef = useRef();
+  const inputCategoryRef = useRef();
+  const inputOccupationRef = useRef();
 
   const GreenSwitch = withStyles({
     switchBase: {
@@ -111,7 +120,7 @@ function NewInvoice() {
         (option) => option.id === e.target.value
       );
       setSelectedCountries(selectedcooperative.countries);
-      console.log("selected countries: ", selectedcooperative.countries);
+      //console.log("selected countries: ", selectedcooperative.countries);
     }
   };
 
@@ -137,12 +146,20 @@ function NewInvoice() {
   };
 
   const occupationSelectHandler = (e) => {
-    let newOccupation = e.target.value;
-    if (newOccupation !== "occupation00") {
-      const occupationsList = [...selectedOccupations];
+    let newOccupationId = e.target.value;
+    let newOccupationName = e.currentTarget.getAttribute("data-name");
+    if (newOccupationId !== "occupation00") {
+      let occupationsList = [...selectedOccupations];
       setCurrentOccupation("occupation00");
       //Check if the occupation is in the list yet.
-      if (!occupationsList.includes(newOccupation)) {
+      var occupationIndex = occupationsList
+        .map((item) => {
+          return item.id;
+        })
+        .indexOf(newOccupationId);
+      //console.log("Occupation index: ", occupationIndex);
+      if (occupationIndex === -1) {
+        const newOccupation = { id: newOccupationId, name: newOccupationName };
         occupationsList.push(newOccupation);
         setSelectedOccupations(occupationsList);
       }
@@ -150,9 +167,9 @@ function NewInvoice() {
   };
 
   const deleteMemberOccupationHandler = (occupationIndex) => {
-    const occupations = [...selectedOccupations];
-    occupations.splice(occupationIndex, 1);
-    setSelectedOccupations(occupations);
+    let occupationList = [...selectedOccupations];
+    occupationList.splice(occupationIndex, 1);
+    setSelectedOccupations(occupationList);
   };
 
   const paidInvoiceHandler = (e) => {
@@ -299,24 +316,28 @@ function NewInvoice() {
     e.preventDefault();
     let validInvoice = true;
     let errors = {};
-    setErrorMessages({});
+    let occupationIds = [];
+    let previousError = false;
 
     try {
-      //FIELD VALIDATION
+      setErrorMessages({});
+      //FIELD VALIDATION (ONLY FIELDS THAT REQUIRE IT)
 
       //Check Invoice paid
-      console.log("Paid invoice:", paidInvoice);
+      //console.log("Paid invoice:", paidInvoice);
 
       //Check invoice document number
-      console.log("Invoice number: ", docNumber);
+      //console.log("Invoice number: ", docNumber);
       validInvoice = checkTextField(docNumber);
       if (!validInvoice) {
         errors.docNumber = "Please enter the invoice document number";
         setErrorMessages(errors);
+        previousError = true;
+        inputDocNumberRef.current.focus();
       }
 
       //Check invoice date
-      console.log("Invoice date: ", invoiceDate);
+      //console.log("Invoice date: ", invoiceDate);
       validInvoice = checkDateField(invoiceDate);
       if (!validInvoice) {
         errors.invoiceDate = "Please enter a date";
@@ -328,9 +349,13 @@ function NewInvoice() {
           setErrorMessages(errors);
         }
       }
+      if (!validInvoice && !previousError) {
+        previousError = true;
+        inputInvoiceDateRef.current.focus();
+      }
 
       //Check due date
-      console.log("Due date: ", dueDate);
+      //console.log("Due date: ", dueDate);
       validInvoice = checkDateField(dueDate);
       if (!validInvoice) {
         errors.dueDate = "Please enter a date";
@@ -342,58 +367,84 @@ function NewInvoice() {
           setErrorMessages(errors);
         }
       }
+      if (!validInvoice && !previousError) {
+        previousError = true;
+        inputDueDateRef.current.focus();
+      }
 
       //Check VAT Base
-      console.log("VAT Base: ", vatBase);
+      //console.log("VAT Base: ", vatBase);
       validInvoice = checkTextField(vatBase);
       if (!validInvoice) {
         errors.vatBase = "Please enter an amount";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputVatBaseRef.current.focus();
+        }
       }
+
       //Check VAT Percentage
-      console.log("VAT Percentage: ", vatPercentage);
+      //console.log("VAT Percentage: ", vatPercentage);
       validInvoice = checkTextField(vatPercentage);
       if (!validInvoice) {
         errors.vatPercentage = "Please enter a percentage";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputVatPercentageRef.current.focus();
+        }
       }
+
       //Check VAT Total
-      console.log("VAT Total: ", vatTotal);
+      //console.log("VAT Total: ", vatTotal);
 
       //Check EUR Total amount
-      console.log("EUR Total amount: ", eurTotalAmount);
+      //console.log("EUR Total amount: ", eurTotalAmount);
 
       //Check USD Exchange rate
-      console.log("USD Exchange rate: ", usdExchangeRate);
+      //console.log("USD Exchange rate: ", usdExchangeRate);
       validInvoice = checkTextField(usdExchangeRate);
       if (!validInvoice) {
         errors.usdExchangeRate = "Please enter a rate";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputUsdExchangeRateRef.current.focus();
+        }
       }
       //Check USD Total amount
-      console.log("USD Total amount: ", usdTotalAmount);
+      //console.log("USD Total amount: ", usdTotalAmount);
 
       //Check Age
-      console.log("Age: ", age);
+      //console.log("Age: ", age);
       validInvoice = checkTextField(age);
       if (!validInvoice) {
         errors.age = "Please enter member age";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputAgeRef.current.focus();
+        }
       }
 
       //Check Gender
-      console.log("Gender: ", gender);
+      //console.log("Gender: ", gender);
 
       //Check Cooperative
-      console.log("Cooperative: ", currentCooperative);
+      //console.log("Cooperative: ", currentCooperative);
       validInvoice = checkTextField(currentCooperative);
       if (!validInvoice || currentCooperative === "cooperative00") {
         errors.cooperative = "Please select a cooperative";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputCooperativeRef.current.focus();
+        }
       }
 
       //Check Country
-      console.log("Country: ", currentCountry);
+      //console.log("Country: ", currentCountry);
       validInvoice = checkTextField(currentCountry);
       if (
         !validInvoice ||
@@ -402,10 +453,14 @@ function NewInvoice() {
       ) {
         errors.country = "Please select a country";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputCountryRef.current.focus();
+        }
       }
 
       //Check Office
-      console.log("Office: ", currentOffice);
+      //console.log("Office: ", currentOffice);
       validInvoice = checkTextField(currentOffice);
       if (
         !validInvoice ||
@@ -413,6 +468,10 @@ function NewInvoice() {
       ) {
         errors.office = "Please select an office";
         setErrorMessages(errors);
+        if (!previousError) {
+          previousError = true;
+          inputOfficeRef.current.focus();
+        }
       }
 
       //Check occupations
@@ -422,14 +481,42 @@ function NewInvoice() {
         if (currentCategory === "category00") {
           errors.category =
             "Please select a category associated with the invoice";
+          if (!previousError) {
+            previousError = true;
+            inputCategoryRef.current.focus();
+          }
         } else {
           errors.occupations = "Please select an occupation for the category";
+          if (!previousError) {
+            previousError = true;
+            inputOccupationRef.current.focus();
+          }
         }
         setErrorMessages(errors);
+      } else {
+        //We store only occupation ids.
+        occupationIds = selectedOccupations.map((occupation) => {
+          return occupation.id;
+        });
       }
 
       //Check for errors.
       if (Object.keys(errors).length === 0) {
+        //Fields to store in the blockchain
+        console.log("Paid invoice:", paidInvoice);
+        console.log("Invoice number: ", docNumber);
+        console.log("Invoice date: ", invoiceDate);
+        console.log("Due date: ", dueDate);
+        console.log("VAT Base: ", vatBase);
+        console.log("VAT Percentage: ", vatPercentage);
+        console.log("USD Exchange rate: ", usdExchangeRate);
+        console.log("Age: ", age);
+        console.log("Gender: ", gender);
+        console.log("Cooperative: ", currentCooperative);
+        console.log("Country: ", currentCountry);
+        console.log("Office: ", currentOffice);
+        console.log("Occupation Ids: ", occupationIds);
+
         setLoading(true);
       }
     } catch (error) {
@@ -441,7 +528,7 @@ function NewInvoice() {
   };
 
   return (
-    <>
+    <div>
       <Typography variant="h5" className={styles.title} noWrap>
         Add a new invoice
       </Typography>
@@ -479,6 +566,7 @@ function NewInvoice() {
               onKeyPress={(e) => {
                 e.key === "Enter" && e.preventDefault();
               }}
+              inputRef={inputDocNumberRef}
             />
             {!!errorMessages.docNumber ? (
               <FormHelperText id="docNumberErrorMessage">
@@ -506,6 +594,7 @@ function NewInvoice() {
             onKeyPress={(e) => {
               e.key === "Enter" && e.preventDefault();
             }}
+            inputRef={inputInvoiceDateRef}
           />
           <TextField
             id="txtDueDate"
@@ -523,6 +612,7 @@ function NewInvoice() {
             onKeyPress={(e) => {
               e.key === "Enter" && e.preventDefault();
             }}
+            inputRef={inputDueDateRef}
           />{" "}
         </div>
         <div className={styles.divForm}>
@@ -694,6 +784,7 @@ function NewInvoice() {
                 min: 18,
                 max: 99,
               }}
+              inputRef={inputAgeRef}
             />
             {!!errorMessages.age ? (
               <FormHelperText id="ageErrorMessage">
@@ -739,6 +830,7 @@ function NewInvoice() {
             onChange={cooperativeSelectHandler}
             error={!!errorMessages.cooperative}
             helperText={errorMessages.cooperative}
+            inputRef={inputCooperativeRef}
           >
             <MenuItem key="cooperative00" value="cooperative00">
               Select a cooperative...
@@ -760,6 +852,7 @@ function NewInvoice() {
             disabled={currentCooperative === "cooperative00"}
             error={!!errorMessages.country}
             helperText={errorMessages.country}
+            inputRef={inputCountryRef}
           >
             <MenuItem key="country00" value="country00">
               Select a country...
@@ -785,6 +878,7 @@ function NewInvoice() {
             onChange={officeSelectHandler}
             error={!!errorMessages.office}
             helperText={errorMessages.office}
+            inputRef={inputOfficeRef}
           >
             <MenuItem key="office00" value="office00">
               Select an office...
@@ -810,6 +904,7 @@ function NewInvoice() {
             onChange={categorySelectHandler}
             error={!!errorMessages.category}
             helperText={errorMessages.category}
+            inputRef={inputCategoryRef}
           >
             <MenuItem key="category00" value="category00">
               Select a category...
@@ -830,24 +925,29 @@ function NewInvoice() {
             disabled={currentCategory === "category00"}
             error={!!errorMessages.occupations}
             helperText={errorMessages.occupations}
+            inputRef={inputOccupationRef}
           >
             <MenuItem key="occupation00" value="occupation00">
               Select an occupation...
             </MenuItem>
             {occupations.map((option) =>
               option.category === currentCategory ? (
-                <MenuItem key={option.id} value={option.id}>
+                <MenuItem
+                  key={option.id}
+                  value={option.id}
+                  data-name={option.name}
+                >
                   {option.name}
                 </MenuItem>
               ) : null
             )}
           </TextField>
         </div>
-        <div className={styles.memberInfoOccupationSelectedList}>
+        <div>
           <InvoiceOccupations
             occupations={selectedOccupations}
             clicked={deleteMemberOccupationHandler}
-            canDelete="true"
+            canDelete={true}
           />
         </div>
         <div className={styles.divButtonForm}>
@@ -868,7 +968,7 @@ function NewInvoice() {
         </div>
         <div className={styles.spacer}> </div>
       </form>{" "}
-    </>
+    </div>
   );
 }
 

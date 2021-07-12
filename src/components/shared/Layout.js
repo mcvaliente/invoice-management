@@ -1,20 +1,18 @@
 import React from "react";
-import Layout from "../shared/Layout";
-import NewInvoice from "../invoice/NewInvoice";
+import Header from "./Header";
+import Footer from "./Footer";
 
-export function Home(props) {
+export default (props) => {
   return (
     <>
-      <Layout
+      <Header
         metamaskInstalled={props.metamaskInstalled}
         validNetwork={props.validNetwork}
         metamaskConnected={props.metamaskConnected}
         clicked={props.clicked}
-      >
-        <NewInvoice />
-      </Layout>
+      />
+      {props.children}
+      <Footer />
     </>
   );
-}
-
-export default Home;
+};
