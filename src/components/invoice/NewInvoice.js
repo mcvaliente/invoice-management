@@ -37,7 +37,7 @@ import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
-import { getWeb3 } from "../../components/wallet/web3";
+import { getWeb3 } from "../../utils/web3";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 function NewInvoice() {

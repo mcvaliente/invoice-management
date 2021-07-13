@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styles from "../../assets/css/Header.module.css";
 import {
   AppBar,
@@ -11,15 +11,36 @@ import {
 import SearchIcon from "@material-ui/icons/Search";
 import HelpIcon from "@material-ui/icons/Help";
 import { MetaMaskButton } from "rimble-ui";
-
-const srcP2PModelsLogo = "/images/logo-p2pmodels.png";
-
-const invoiceSearchHandler = (invoiceId) => {
-  console.log("New invoice id to search");
-  alert("New invoice Search");
-};
+import InvoiceSearchDialog from "../invoice/InvoiceSearchDialog";
+import { Redirect } from "react-router-dom";
 
 const Header = (props) => {
+  const srcP2PModelsLogo = "/images/logo-p2pmodels.png";
+
+  const [invoiceSearch, setInvoiceSearch] = useState(false);
+  const [docNumber, setDocNumber] = useState("");
+  const [invoiceInfoRedirect, setInvoiceInfoRedirect] = useState(false);
+
+  const invoiceSearchHandler = () => {
+    setInvoiceSearch(true);
+  };
+
+  const okInvoiceSearchHandler = (invoiceId) => {
+    console.log("Document number: ", invoiceId);
+    setInvoiceSearch(false);
+    setDocNumber(invoiceId);
+    setInvoiceInfoRedirect(true);
+  };
+
+  const cancelInvoiceSearchHandler = () => {
+    console.log("Cancel searching proces...");
+    setInvoiceSearch(false);
+  };
+
+  if (invoiceInfoRedirect) {
+    return <Redirect to={`/invoice/${docNumber}`}></Redirect>;
+  }
+
   return (
     <>
       <AppBar position="static">
@@ -34,65 +55,43 @@ const Header = (props) => {
           <Typography className={styles.title} variant="h5" noWrap>
             P2P Models
           </Typography>
-          {props.metamaskInstalled && props.validNetwork ? (
-            <>
-              <Tooltip title="Search for an invoice by doc number" arrow>
-                <IconButton
-                  aria-label="search"
-                  color="inherit"
-                  style={{ marginRight: 20 }}
-                  onClick={invoiceSearchHandler}
-                >
-                  <SearchIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="What is a wallet?" arrow>
-                <Link
-                  color="inherit"
-                  href="https://ethereum.org/en/wallets/"
-                  target="_blank"
-                  style={{ marginRight: 5 }}
-                >
-                  <HelpIcon style={{ color: "#565956", fontSize: 25 }} />
-                </Link>
-              </Tooltip>
-              <MetaMaskButton
-                onClick={props.clicked}
-                className={styles.metaMaskButton}
-                disabled={props.metamaskConnected}
-              >
-                {props.metamaskConnected
-                  ? "Connected with MetaMask"
-                  : "Connect with MetaMask"}
-              </MetaMaskButton>
-            </>
-          ) : (
-            <>
-              <IconButton
-                aria-label="search"
-                color="inherit"
-                style={{ marginRight: 20 }}
-                disabled
-              >
-                <SearchIcon />
-              </IconButton>
-              <Tooltip title="What is a wallet?" arrow>
-                <Link
-                  color="inherit"
-                  href="https://ethereum.org/en/wallets/"
-                  target="_blank"
-                  style={{ marginRight: 5 }}
-                >
-                  <HelpIcon style={{ color: "#565956", fontSize: 25 }} />
-                </Link>
-              </Tooltip>
-              <MetaMaskButton disabled className={styles.metaMaskButton}>
-                Connect with MetaMask
-              </MetaMaskButton>
-            </>
-          )}
+          <Tooltip title="Search for an invoice by doc number" arrow>
+            <IconButton
+              aria-label="search"
+              color="inherit"
+              style={{ marginRight: 20 }}
+              onClick={invoiceSearchHandler}
+            >
+              <SearchIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="What is a wallet?" arrow>
+            <Link
+              color="inherit"
+              href="https://ethereum.org/en/wallets/"
+              target="_blank"
+              style={{ marginRight: 5 }}
+            >
+              <HelpIcon style={{ color: "#565956", fontSize: 25 }} />
+            </Link>
+          </Tooltip>
+          <MetaMaskButton
+            onClick={props.clicked}
+            className={styles.metaMaskButton}
+            disabled={props.metamaskConnected}
+          >
+            {props.metamaskConnected
+              ? "Connected with MetaMask"
+              : "Connect with MetaMask"}
+          </MetaMaskButton>
         </Toolbar>
       </AppBar>
+      {invoiceSearch ? (
+        <InvoiceSearchDialog
+          invoiceSearchCancelDialogHandler={cancelInvoiceSearchHandler}
+          invoiceSearchOKDialogHandler={okInvoiceSearchHandler}
+        />
+      ) : null}
     </>
   );
 };

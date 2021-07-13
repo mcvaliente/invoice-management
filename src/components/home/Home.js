@@ -6,8 +6,6 @@ export function Home(props) {
   return (
     <>
       <Layout
-        metamaskInstalled={props.metamaskInstalled}
-        validNetwork={props.validNetwork}
         metamaskConnected={props.metamaskConnected}
         clicked={props.clicked}
       >
