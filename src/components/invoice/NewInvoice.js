@@ -37,6 +37,8 @@ import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
+import { getWeb3 } from "../../components/wallet/web3";
+import ConfirmDialog from "../shared/ConfirmDialog";
 
 function NewInvoice() {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -58,6 +60,7 @@ function NewInvoice() {
   const [currentCategory, setCurrentCategory] = useState("");
   const [currentOccupation, setCurrentOccupation] = useState("");
   const [selectedOccupations, setSelectedOccupations] = useState([]);
+  const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
 
@@ -73,6 +76,8 @@ function NewInvoice() {
   const inputOfficeRef = useRef();
   const inputCategoryRef = useRef();
   const inputOccupationRef = useRef();
+
+  const web3 = getWeb3();
 
   const GreenSwitch = withStyles({
     switchBase: {
@@ -316,7 +321,6 @@ function NewInvoice() {
     e.preventDefault();
     let validInvoice = true;
     let errors = {};
-    let occupationIds = [];
     let previousError = false;
 
     try {
@@ -493,31 +497,11 @@ function NewInvoice() {
           }
         }
         setErrorMessages(errors);
-      } else {
-        //We store only occupation ids.
-        occupationIds = selectedOccupations.map((occupation) => {
-          return occupation.id;
-        });
       }
 
       //Check for errors.
       if (Object.keys(errors).length === 0) {
-        //Fields to store in the blockchain
-        console.log("Paid invoice:", paidInvoice);
-        console.log("Invoice number: ", docNumber);
-        console.log("Invoice date: ", invoiceDate);
-        console.log("Due date: ", dueDate);
-        console.log("VAT Base: ", vatBase);
-        console.log("VAT Percentage: ", vatPercentage);
-        console.log("USD Exchange rate: ", usdExchangeRate);
-        console.log("Age: ", age);
-        console.log("Gender: ", gender);
-        console.log("Cooperative: ", currentCooperative);
-        console.log("Country: ", currentCountry);
-        console.log("Office: ", currentOffice);
-        console.log("Occupation Ids: ", occupationIds);
-
-        setLoading(true);
+        setSaveBlockchain(true);
       }
     } catch (error) {
       setLoading(false);
@@ -525,6 +509,66 @@ function NewInvoice() {
       errors.general = error.message;
       setErrorMessages(errors);
     }
+  };
+
+  const saveInvoiceOKDialogHandler = () => {
+    //The new invoice can be stored in the Blockchain.
+    setLoading(true);
+    setSaveBlockchain(false);
+    //First, we check if wallet config is ok
+
+    //We store only occupation ids.
+    const occupationIds = selectedOccupations.map((occupation) => {
+      return occupation.id;
+    });
+
+    //Fields to store in the blockchain
+    console.log("Paid invoice:", paidInvoice);
+    console.log("Invoice number: ", docNumber);
+    console.log("Invoice date: ", invoiceDate);
+    console.log("Due date: ", dueDate);
+    console.log("VAT Base: ", vatBase);
+    console.log("VAT Percentage: ", vatPercentage);
+    console.log("USD Exchange rate: ", usdExchangeRate);
+    console.log("Age: ", age);
+    console.log("Gender: ", gender);
+    console.log("Cooperative: ", currentCooperative);
+    console.log("Country: ", currentCountry);
+    console.log("Office: ", currentOffice);
+    console.log("Occupation Ids: ", occupationIds);
+
+    //Adapt fields in order to store them in the blockchain
+    const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
+    const bytes16MemberCooperative = web3.utils.fromAscii(currentCooperative);
+    const bytes16MemberCountry = web3.utils.fromAscii(currentCountry);
+    const bytes16MemberOffice = web3.utils.fromAscii(currentOffice);
+    const bytes16MemberLocation = [
+      bytes16MemberCooperative,
+      bytes16MemberCountry,
+      bytes16MemberOffice,
+    ];
+    const bytes16Invoicedate = web3.utils.fromAscii(invoiceDate);
+    const bytes16DueDate = web3.utils.fromAscii(dueDate);
+    const bytes16InvoiceDates = [bytes16Invoicedate, bytes16DueDate];
+    const bytes16VatBase = web3.utils.fromAscii(vatBase);
+    const bytes16VatPercentage = web3.utils.fromAscii(vatPercentage);
+    const bytes16UsdExchangeRate = web3.utils.fromAscii(usdExchangeRate);
+    const bytes16CostData = [
+      bytes16VatBase,
+      bytes16VatPercentage,
+      bytes16UsdExchangeRate,
+    ];
+    //Save the ids of the occupation(s) associated with the invoice.
+    const bytes16Occupations = occupationIds.map((occupation) => {
+      return web3.utils.fromAscii(occupation);
+    });
+    const bytes16Gender = web3.utils.fromAscii(gender);
+    const uint256Age = age;
+  };
+
+  const saveInvoiceCancelDialogHandler = () => {
+    setSaveBlockchain(false);
+    console.log("The invoice is not stored in the blockchain.");
   };
 
   return (
@@ -968,6 +1012,16 @@ function NewInvoice() {
         </div>
         <div className={styles.spacer}> </div>
       </form>{" "}
+      {saveBlockchain ? (
+        <ConfirmDialog
+          confirmPrimaryDialogHandler={saveInvoiceOKDialogHandler}
+          confirmSecondaryDialogHandler={saveInvoiceCancelDialogHandler}
+          dialogTitle="Proceed?"
+          dialogDescription="The invoice will be stored in the Ethereum's Rinkeby Test Network."
+          primaryButton="Save"
+          secondaryButton="Cancel"
+        />
+      ) : null}
     </div>
   );
 }
