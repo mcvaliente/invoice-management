@@ -42,6 +42,7 @@ import { getWeb3 } from "../../utils/web3";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import MetaMaskWallet from "../wallet/MetaMaskWallet";
 import invoice from "../../contracts/invoice";
+import { getCurrentAccount } from "../../utils/web3";
 
 function NewInvoice() {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -533,9 +534,11 @@ function NewInvoice() {
   };
 
   const walletConnectionHandler = async (walletConnected) => {
+    setConnectionWallet(false);
     let errors = {};
     try {
       if (walletConnected) {
+        setLoading(true);
         //First, check that the invoice number is not included in the blockchain.
         const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
         const existingInvoice = await invoice.methods
@@ -547,11 +550,6 @@ function NewInvoice() {
           setErrorMessages(errors);
           inputDocNumberRef.current.focus();
         } else {
-          //We store only occupation ids.
-          const occupationIds = selectedOccupations.map((occupation) => {
-            return occupation.id;
-          });
-
           //Fields to store in the blockchain
           console.log("Paid invoice:", paidInvoice);
           console.log("Invoice number: ", docNumber);
@@ -565,6 +563,10 @@ function NewInvoice() {
           console.log("Cooperative: ", currentCooperative);
           console.log("Country: ", currentCountry);
           console.log("Office: ", currentOffice);
+          //Save only the ids of the occupation(s) associated with the invoice.
+          const occupationIds = selectedOccupations.map((occupation) => {
+            return occupation.id;
+          });
           console.log("Occupation Ids: ", occupationIds);
 
           //Adapt fields in order to store them in the blockchain
@@ -588,12 +590,30 @@ function NewInvoice() {
             bytes16VatPercentage,
             bytes16UsdExchangeRate,
           ];
-          //Save the ids of the occupation(s) associated with the invoice.
           const bytes16Occupations = occupationIds.map((occupation) => {
             return web3.utils.fromAscii(occupation);
           });
           const bytes16Gender = web3.utils.fromAscii(gender);
           const uint256Age = age;
+          //Get the current account.
+          const currentAccount = getCurrentAccount();
+          await invoice.methods
+            .createInvoice(
+              paidInvoice,
+              bytes32InvoiceId,
+              bytes16MemberLocation,
+              bytes16InvoiceDates,
+              bytes16CostData,
+              bytes16Occupations,
+              bytes16Gender,
+              uint256Age
+            )
+            .send({
+              from: currentAccount,
+              gas: "2000000",
+            });
+
+          setLoading(false);
         }
       }
     } catch (error) {
