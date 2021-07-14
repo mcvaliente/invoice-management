@@ -62,11 +62,16 @@ export default function InvoiceSearchDialog(props) {
           <Button
             onClick={invoiceSearchCancelDialogCloseHandler}
             color="primary"
+            variant="contained"
             autoFocus
           >
             Cancel
           </Button>
-          <Button onClick={invoiceSearchOKDialogCloseHandler} color="primary">
+          <Button
+            onClick={invoiceSearchOKDialogCloseHandler}
+            color="primary"
+            variant="contained"
+          >
             OK
           </Button>
         </DialogActions>

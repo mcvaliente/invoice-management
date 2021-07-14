@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   checkMetaMask,
   checkNetwork,
@@ -18,14 +18,14 @@ export default function MetaMaskWallet(props) {
 
   const metamaskInstallationDialogHandler = () => {
     console.log(
-      "We reload the page in order to test if MetaMask is installed now."
+      "metamaskInstallationDialogHandler - Reload the page in order to test if MetaMask is installed now."
     );
     setReloadPage(true);
   };
 
   const metamaskNetworkDialogHandler = () => {
     console.log(
-      "We reload the page in order to test if Rinkeby Test Network is selected now."
+      "metamaskNetworkDialogHandler - Reload the page in order to test if Rinkeby Test Network is selected now."
     );
     setReloadPage(true);
   };
@@ -36,13 +36,16 @@ export default function MetaMaskWallet(props) {
     metamaskConnectionHandler(false);
   };
 
-  const metamaskConnectionHandler = (validConnection) => {
-    console.log(
-      "metaMaskConnectionHandler -- validConnection: ",
-      validConnection
-    );
-    props.connectionHandler(validConnection);
-  };
+  const metamaskConnectionHandler = useCallback(
+    (validConnection) => {
+      console.log(
+        "metaMaskConnectionHandler -- validConnection: ",
+        validConnection
+      );
+      props.connectionHandler(validConnection);
+    },
+    [props]
+  );
 
   useEffect(() => {
     //async function inside useEffect since we cannot declare useEffect as "async".
@@ -85,7 +88,7 @@ export default function MetaMaskWallet(props) {
 
     //Check if MetaMask is installed and the Rinkeby test network is selected.
     checkWallet();
-  });
+  }, [metamaskConnectionHandler]);
 
   if (reloadPage) {
     window.location.reload();

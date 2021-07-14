@@ -6,8 +6,6 @@ export default (props) => {
   return (
     <>
       <Header
-        metamaskInstalled={props.metamaskInstalled}
-        validNetwork={props.validNetwork}
         metamaskConnected={props.metamaskConnected}
         clicked={props.clicked}
       />

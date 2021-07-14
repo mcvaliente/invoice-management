@@ -37,11 +37,16 @@ export default function ConfirmDialog(props) {
           <Button
             onClick={confirmPrimaryDialogCloseHandler}
             color="primary"
+            variant="contained"
             autoFocus
           >
             {props.primaryButton}
           </Button>
-          <Button onClick={confirmSecondaryDialogCloseHandler} color="primary">
+          <Button
+            onClick={confirmSecondaryDialogCloseHandler}
+            color="primary"
+            variant="contained"
+          >
             {props.secondaryButton}
           </Button>
         </DialogActions>

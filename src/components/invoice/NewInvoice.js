@@ -32,6 +32,7 @@ import {
   CircularProgress,
   MenuItem,
 } from "@material-ui/core";
+import MuiAlert from "@material-ui/lab/Alert";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
@@ -39,6 +40,8 @@ import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
 import { getWeb3 } from "../../utils/web3";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import MetaMaskWallet from "../wallet/MetaMaskWallet";
+import invoice from "../../contracts/invoice";
 
 function NewInvoice() {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -63,6 +66,7 @@ function NewInvoice() {
   const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
+  const [connectionWallet, setConnectionWallet] = useState(false);
 
   const inputDocNumberRef = useRef();
   const inputInvoiceDateRef = useRef();
@@ -76,6 +80,7 @@ function NewInvoice() {
   const inputOfficeRef = useRef();
   const inputCategoryRef = useRef();
   const inputOccupationRef = useRef();
+  const generalErrorRef = useRef();
 
   const web3 = getWeb3();
 
@@ -325,6 +330,7 @@ function NewInvoice() {
 
     try {
       setErrorMessages({});
+
       //FIELD VALIDATION (ONLY FIELDS THAT REQUIRE IT)
 
       //Check Invoice paid
@@ -496,8 +502,9 @@ function NewInvoice() {
             inputOccupationRef.current.focus();
           }
         }
-        setErrorMessages(errors);
       }
+
+      setErrorMessages(errors);
 
       //Check for errors.
       if (Object.keys(errors).length === 0) {
@@ -506,69 +513,98 @@ function NewInvoice() {
     } catch (error) {
       setLoading(false);
       setErrorMessages({});
-      errors.general = error.message;
+      errors.general =
+        "EXCEPTION ERROR - New invoice (onSubmit): " + error.message;
+      generalErrorRef.current.focus();
       setErrorMessages(errors);
     }
   };
 
   const saveInvoiceOKDialogHandler = () => {
     //The new invoice can be stored in the Blockchain.
-    setLoading(true);
     setSaveBlockchain(false);
-    //First, we check if wallet config is ok
-
-    //We store only occupation ids.
-    const occupationIds = selectedOccupations.map((occupation) => {
-      return occupation.id;
-    });
-
-    //Fields to store in the blockchain
-    console.log("Paid invoice:", paidInvoice);
-    console.log("Invoice number: ", docNumber);
-    console.log("Invoice date: ", invoiceDate);
-    console.log("Due date: ", dueDate);
-    console.log("VAT Base: ", vatBase);
-    console.log("VAT Percentage: ", vatPercentage);
-    console.log("USD Exchange rate: ", usdExchangeRate);
-    console.log("Age: ", age);
-    console.log("Gender: ", gender);
-    console.log("Cooperative: ", currentCooperative);
-    console.log("Country: ", currentCountry);
-    console.log("Office: ", currentOffice);
-    console.log("Occupation Ids: ", occupationIds);
-
-    //Adapt fields in order to store them in the blockchain
-    const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
-    const bytes16MemberCooperative = web3.utils.fromAscii(currentCooperative);
-    const bytes16MemberCountry = web3.utils.fromAscii(currentCountry);
-    const bytes16MemberOffice = web3.utils.fromAscii(currentOffice);
-    const bytes16MemberLocation = [
-      bytes16MemberCooperative,
-      bytes16MemberCountry,
-      bytes16MemberOffice,
-    ];
-    const bytes16Invoicedate = web3.utils.fromAscii(invoiceDate);
-    const bytes16DueDate = web3.utils.fromAscii(dueDate);
-    const bytes16InvoiceDates = [bytes16Invoicedate, bytes16DueDate];
-    const bytes16VatBase = web3.utils.fromAscii(vatBase);
-    const bytes16VatPercentage = web3.utils.fromAscii(vatPercentage);
-    const bytes16UsdExchangeRate = web3.utils.fromAscii(usdExchangeRate);
-    const bytes16CostData = [
-      bytes16VatBase,
-      bytes16VatPercentage,
-      bytes16UsdExchangeRate,
-    ];
-    //Save the ids of the occupation(s) associated with the invoice.
-    const bytes16Occupations = occupationIds.map((occupation) => {
-      return web3.utils.fromAscii(occupation);
-    });
-    const bytes16Gender = web3.utils.fromAscii(gender);
-    const uint256Age = age;
+    //Check if wallet config is ok.
+    setConnectionWallet(true);
   };
 
   const saveInvoiceCancelDialogHandler = () => {
     setSaveBlockchain(false);
     console.log("The invoice is not stored in the blockchain.");
+  };
+
+  const walletConnectionHandler = async (walletConnected) => {
+    let errors = {};
+    try {
+      if (walletConnected) {
+        //First, check that the invoice number is not included in the blockchain.
+        const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
+        const existingInvoice = await invoice.methods
+          .invoiceExists(bytes32InvoiceId)
+          .call();
+        console.log("Existing invoice: ", existingInvoice);
+        if (existingInvoice) {
+          errors.docNumber = "Please enter the invoice document number";
+          setErrorMessages(errors);
+          inputDocNumberRef.current.focus();
+        } else {
+          //We store only occupation ids.
+          const occupationIds = selectedOccupations.map((occupation) => {
+            return occupation.id;
+          });
+
+          //Fields to store in the blockchain
+          console.log("Paid invoice:", paidInvoice);
+          console.log("Invoice number: ", docNumber);
+          console.log("Invoice date: ", invoiceDate);
+          console.log("Due date: ", dueDate);
+          console.log("VAT Base: ", vatBase);
+          console.log("VAT Percentage: ", vatPercentage);
+          console.log("USD Exchange rate: ", usdExchangeRate);
+          console.log("Age: ", age);
+          console.log("Gender: ", gender);
+          console.log("Cooperative: ", currentCooperative);
+          console.log("Country: ", currentCountry);
+          console.log("Office: ", currentOffice);
+          console.log("Occupation Ids: ", occupationIds);
+
+          //Adapt fields in order to store them in the blockchain
+          const bytes16MemberCooperative =
+            web3.utils.fromAscii(currentCooperative);
+          const bytes16MemberCountry = web3.utils.fromAscii(currentCountry);
+          const bytes16MemberOffice = web3.utils.fromAscii(currentOffice);
+          const bytes16MemberLocation = [
+            bytes16MemberCooperative,
+            bytes16MemberCountry,
+            bytes16MemberOffice,
+          ];
+          const bytes16Invoicedate = web3.utils.fromAscii(invoiceDate);
+          const bytes16DueDate = web3.utils.fromAscii(dueDate);
+          const bytes16InvoiceDates = [bytes16Invoicedate, bytes16DueDate];
+          const bytes16VatBase = web3.utils.fromAscii(vatBase);
+          const bytes16VatPercentage = web3.utils.fromAscii(vatPercentage);
+          const bytes16UsdExchangeRate = web3.utils.fromAscii(usdExchangeRate);
+          const bytes16CostData = [
+            bytes16VatBase,
+            bytes16VatPercentage,
+            bytes16UsdExchangeRate,
+          ];
+          //Save the ids of the occupation(s) associated with the invoice.
+          const bytes16Occupations = occupationIds.map((occupation) => {
+            return web3.utils.fromAscii(occupation);
+          });
+          const bytes16Gender = web3.utils.fromAscii(gender);
+          const uint256Age = age;
+        }
+      }
+    } catch (error) {
+      setLoading(false);
+      setErrorMessages({});
+      errors.general =
+        "EXCEPTION ERROR - New invoice (walletConnectionHandler): " +
+        error.message;
+      generalErrorRef.current.focus();
+      setErrorMessages(errors);
+    }
   };
 
   return (
@@ -994,6 +1030,13 @@ function NewInvoice() {
             canDelete={true}
           />
         </div>
+        {!!errorMessages.general ? (
+          <div ref={generalErrorRef}>
+            <MuiAlert elevation={6} variant="filled" severity="error">
+              {errorMessages.general}
+            </MuiAlert>
+          </div>
+        ) : null}
         <div className={styles.divButtonForm}>
           <Button
             variant="contained"
@@ -1021,6 +1064,9 @@ function NewInvoice() {
           primaryButton="Save"
           secondaryButton="Cancel"
         />
+      ) : null}
+      {connectionWallet ? (
+        <MetaMaskWallet connectionHandler={walletConnectionHandler} />
       ) : null}
     </div>
   );
