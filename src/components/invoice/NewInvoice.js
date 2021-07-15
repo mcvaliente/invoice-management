@@ -32,19 +32,19 @@ import {
   CircularProgress,
   MenuItem,
 } from "@material-ui/core";
-import MuiAlert from "@material-ui/lab/Alert";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
 import { getWeb3 } from "../../utils/web3";
-import ConfirmDialog from "../shared/ConfirmDialog";
-import MetaMaskWallet from "../wallet/MetaMaskWallet";
 import invoice from "../../contracts/invoice";
 import { getCurrentAccount } from "../../utils/web3";
+import ConfirmDialog from "../shared/ConfirmDialog";
+import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
+import Alert from "../shared/Alert";
 
-function NewInvoice() {
+function NewInvoice(props) {
   const [paidInvoice, setPaidInvoice] = useState(false);
   const [docNumber, setDocNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
@@ -67,7 +67,12 @@ function NewInvoice() {
   const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
-  const [connectionWallet, setConnectionWallet] = useState(false);
+  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(
+    props.metaMaskConnected
+  );
+  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
+  const [successOperationComplete, setSuccessOperationComplete] =
+    useState(false);
 
   const inputDocNumberRef = useRef();
   const inputInvoiceDateRef = useRef();
@@ -212,7 +217,7 @@ function NewInvoice() {
   const vatBaseValidationHandler = (e) => {
     const value = e.target.value;
     let errors = {};
-    setErrorMessages(errors);
+    setErrorMessages({});
     let validField = checkNumberField(value);
     if (!validField) {
       errors.vatBase = "Please enter a valid amount";
@@ -236,7 +241,7 @@ function NewInvoice() {
   const vatPercentageValidationHandler = (e) => {
     const value = e.target.value;
     let errors = {};
-    setErrorMessages(errors);
+    setErrorMessages({});
     //First check if we have a valid value in the VAT base field.
     let validField = checkNumberField(vatBase);
     if (!validField) {
@@ -277,7 +282,7 @@ function NewInvoice() {
     const value = e.target.value;
     //Check if the value is a number.
     let errors = {};
-    setErrorMessages(errors);
+    setErrorMessages({});
     //First check if we have a valid value in the VAT base field and in the VAT percentage.
     let validField = checkNumberField(vatBase);
     if (!validField) {
@@ -521,23 +526,15 @@ function NewInvoice() {
     }
   };
 
-  const saveInvoiceOKDialogHandler = () => {
+  const saveInvoiceOKDialogHandler = async () => {
     //The new invoice can be stored in the Blockchain.
     setSaveBlockchain(false);
-    //Check if wallet config is ok.
-    setConnectionWallet(true);
-  };
-
-  const saveInvoiceCancelDialogHandler = () => {
-    setSaveBlockchain(false);
-    console.log("The invoice is not stored in the blockchain.");
-  };
-
-  const walletConnectionHandler = async (walletConnected) => {
-    setConnectionWallet(false);
+    setConnectionErrorMessage("");
+    setErrorMessages({});
     let errors = {};
     try {
-      if (walletConnected) {
+      if (isMetaMaskConnected) {
+        console.log("saveInvoiceOKDialogHandler - MetaMask connected.");
         setLoading(true);
         //First, check that the invoice number is not included in the blockchain.
         const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
@@ -546,9 +543,11 @@ function NewInvoice() {
           .call();
         console.log("Existing invoice: ", existingInvoice);
         if (existingInvoice) {
-          errors.docNumber = "Please enter the invoice document number";
+          errors.docNumber =
+            "There is an existing invoice with the same doc number. Please enter a new invoice document number";
           setErrorMessages(errors);
           inputDocNumberRef.current.focus();
+          setLoading(false);
         } else {
           //Fields to store in the blockchain
           console.log("Paid invoice:", paidInvoice);
@@ -597,6 +596,7 @@ function NewInvoice() {
           const uint256Age = age;
           //Get the current account.
           const currentAccount = getCurrentAccount();
+          console.log("Current account: ", currentAccount);
           await invoice.methods
             .createInvoice(
               paidInvoice,
@@ -612,19 +612,43 @@ function NewInvoice() {
               from: currentAccount,
               gas: "2000000",
             });
+          //Checking the blockchain
+          const totalInvoices = await invoice.methods.getInvoiceCount().call();
+          console.log("Total invoices: ", totalInvoices);
+          const invoiceInfo = await invoice.methods
+            .getInvoiceSummary(bytes32InvoiceId)
+            .call();
+          const output = "[" + JSON.stringify(invoiceInfo) + "]";
+          console.log("Invoice info: ", output);
 
           setLoading(false);
+          setSuccessOperationComplete(true);
         }
+      } else {
+        setConnectionErrorMessage("MetaMask is unavailable.");
       }
     } catch (error) {
       setLoading(false);
-      setErrorMessages({});
-      errors.general =
-        "EXCEPTION ERROR - New invoice (walletConnectionHandler): " +
-        error.message;
-      generalErrorRef.current.focus();
-      setErrorMessages(errors);
+      console.error(
+        "EXCEPTION ERROR - New invoice MetaMask Error (saveInvoiceOKDialogHandler): " +
+          error.message
+      );
+      setConnectionErrorMessage("EXCEPTION ERROR: " + error.message);
     }
+  };
+
+  const saveInvoiceCancelDialogHandler = () => {
+    setSaveBlockchain(false);
+    setConnectionErrorMessage("");
+    setErrorMessages({});
+    console.log("The invoice will not be stored in the blockchain.");
+  };
+
+  const metamaskConnectionDialogHandler = () => {
+    setConnectionErrorMessage("");
+    //We assume that when the user closes this dialog
+    //MetaMask will be available now.
+    setIsMetaMaskConnected(true);
   };
 
   return (
@@ -1051,11 +1075,7 @@ function NewInvoice() {
           />
         </div>
         {!!errorMessages.general ? (
-          <div ref={generalErrorRef}>
-            <MuiAlert elevation={6} variant="filled" severity="error">
-              {errorMessages.general}
-            </MuiAlert>
-          </div>
+          <Alert severity="error" message={errorMessages.general} />
         ) : null}
         <div className={styles.divButtonForm}>
           <Button
@@ -1065,6 +1085,7 @@ function NewInvoice() {
             startIcon={loading ? null : <SaveIcon />}
             type="submit"
             disabled={loading}
+            ref={generalErrorRef}
           >
             {loading ? (
               <CircularProgress style={{ color: "white" }} size="30px" />
@@ -1085,8 +1106,17 @@ function NewInvoice() {
           secondaryButton="Cancel"
         />
       ) : null}
-      {connectionWallet ? (
-        <MetaMaskWallet connectionHandler={walletConnectionHandler} />
+      {!!connectionErrorMessage ? (
+        <MetaMaskConnectionDialog
+          metamaskConnDialogHandler={metamaskConnectionDialogHandler}
+          errorMessage={connectionErrorMessage}
+        />
+      ) : null}
+      {successOperationComplete ? (
+        <Alert
+          severity="success"
+          message="The invoice has beed added successfully!"
+        />
       ) : null}
     </div>
   );

@@ -13,9 +13,14 @@ export function checkMetaMask() {
   try {
     //Check if the browser is running MetaMask and differentiate MetaMask from other
     //ethereum-compatible browsers.
+    //If you want to differentiate MetaMask from other ethereum-compatible browsers,
+    //you can detect MetaMask using ethereum.isMetaMask.
     //Ref: https://docs.metamask.io/guide/getting-started.html#basic-considerations
     //If true => MetaMask is installed.
-    if (typeof window.ethereum !== "undefined") {
+    if (
+      typeof window?.ethereum !== "undefined" &&
+      window?.ethereum.isMetaMask
+    ) {
       console.log("MetaMask is installed!");
       return true;
     } else {
@@ -30,54 +35,29 @@ export function checkMetaMask() {
 
 export async function checkNetwork() {
   try {
-    if (typeof window.ethereum !== "undefined") {
+    if (
+      typeof window?.ethereum !== "undefined" &&
+      window?.ethereum.isMetaMask
+    ) {
+      //More info: https://docs.metamask.io/guide/ethereum-provider.html#chain-ids
       const chainId = await window.ethereum.request({ method: "eth_chainId" });
       console.log("Network selected: ", chainId);
-      //Check that chainId is the Rinkeby Test Network.
-      if (chainId === "0x4") {
-        console.log("Rinkeby Test Network selected!");
-        return true;
-      } else {
-        console.log("Please, select the Rinkeby Test Network.");
-        return false;
-      }
+      return chainId;
+    } else {
+      return "0x00";
     }
   } catch (error) {
     console.error(error);
-    return false;
-  }
-}
-
-export async function getNetwork() {
-  try {
-    if (typeof window.ethereum !== "undefined") {
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      //More info: https://chainid.network/
-      //More info: https://chainid.network/chains.json
-      switch (chainId) {
-        case "0x1":
-          return "Mainnet";
-        case "0x3":
-          return "Ropsten";
-        case "0x4":
-          return "Rinkeby";
-        case "0x5":
-          return "Goerli";
-        case "0x2a":
-          return "Kovan";
-        default:
-          return "Unknown Ethereum network";
-      }
-    }
-  } catch (error) {
-    console.error(error);
-    return "Unable to retrieve chain id.";
+    return "0x00";
   }
 }
 
 export async function enableMetaMask() {
   try {
-    if (typeof window.ethereum !== "undefined") {
+    if (
+      typeof window?.ethereum !== "undefined" &&
+      window?.ethereum.isMetaMask
+    ) {
       //MetaMask is installed.
       //Launch the plugin:
       await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -87,7 +67,7 @@ export async function enableMetaMask() {
         "Ethereum selected address: ",
         window.ethereum.selectedAddress
       );
-      console.log("MetaMask is connected to the application.");
+      console.log("SUCCESS - MetaMask is connected to the application.");
       return 0;
     } else {
       console.log("ERROR - MetaMask is not connected to the application.");

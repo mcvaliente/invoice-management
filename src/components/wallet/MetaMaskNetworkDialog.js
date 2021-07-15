@@ -23,7 +23,7 @@ export default function MetaMaskNetworkDialog(props) {
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title">
-          {"MetaMask Network Selection"}
+          MetaMask Network Selection
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
@@ -31,7 +31,10 @@ export default function MetaMaskNetworkDialog(props) {
             <br />
             Please, change your network in your MetaMask extension.
             <br />
-            You're currently on: {props.currentNetwork}.
+            Then close this dialog in order to reload the page and try again.
+            <br />
+            <br />
+            You're currently on: <strong>{props.currentNetwork}.</strong>
           </DialogContentText>
         </DialogContent>
         <DialogActions>

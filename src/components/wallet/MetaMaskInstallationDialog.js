@@ -23,14 +23,14 @@ export default function MetaMaskInstallationDialog(props) {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {"MetaMask installation"}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">MetaMask installation</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Please, install the MetaMask browser extension to use our dapp's
-            blockchain features in your current browser, and then close this
-            dialog.
+            blockchain features in your current browser.
+            <br />
+            Then close this dialog in order to reload the page and try again.
+            <br />
             <br />
             Supported Browsers:{" "}
             <Link
