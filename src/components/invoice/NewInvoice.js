@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   checkTextField,
   checkDateField,
@@ -31,10 +31,13 @@ import {
   FormLabel,
   CircularProgress,
   MenuItem,
+  IconButton,
 } from "@material-ui/core";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
+import CloseIcon from "@material-ui/icons/Close";
+import Alert from "@material-ui/lab/Alert";
 import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
 import { getWeb3 } from "../../utils/web3";
@@ -42,7 +45,6 @@ import invoice from "../../contracts/invoice";
 import { getCurrentAccount } from "../../utils/web3";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
-import Alert from "../shared/Alert";
 
 function NewInvoice(props) {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -55,15 +57,15 @@ function NewInvoice(props) {
   const [eurTotalAmount, setEurTotalAmount] = useState("");
   const [usdExchangeRate, setUsdExchangeRate] = useState("");
   const [usdTotalAmount, setUsdTotalAmount] = useState("");
+  const [currentCategory, setCurrentCategory] = useState("category00");
+  const [currentOccupation, setCurrentOccupation] = useState("occupation00");
+  const [selectedOccupations, setSelectedOccupations] = useState([]);
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("female");
-  const [currentCooperative, setCurrentCooperative] = useState("");
+  const [currentCooperative, setCurrentCooperative] = useState("cooperative00");
   const [selectedCountries, setSelectedCountries] = useState([]);
-  const [currentCountry, setCurrentCountry] = useState("");
-  const [currentOffice, setCurrentOffice] = useState("");
-  const [currentCategory, setCurrentCategory] = useState("");
-  const [currentOccupation, setCurrentOccupation] = useState("");
-  const [selectedOccupations, setSelectedOccupations] = useState([]);
+  const [currentCountry, setCurrentCountry] = useState("country00");
+  const [currentOffice, setCurrentOffice] = useState("office00");
   const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
@@ -71,8 +73,7 @@ function NewInvoice(props) {
     props.metaMaskConnected
   );
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
-  const [successOperationComplete, setSuccessOperationComplete] =
-    useState(false);
+  const [successNewInvoice, setSuccessNewInvoice] = useState(false);
 
   const inputDocNumberRef = useRef();
   const inputInvoiceDateRef = useRef();
@@ -80,12 +81,12 @@ function NewInvoice(props) {
   const inputVatBaseRef = useRef();
   const inputVatPercentageRef = useRef();
   const inputUsdExchangeRateRef = useRef();
+  const inputCategoryRef = useRef();
+  const inputOccupationRef = useRef();
   const inputAgeRef = useRef();
   const inputCooperativeRef = useRef();
   const inputCountryRef = useRef();
   const inputOfficeRef = useRef();
-  const inputCategoryRef = useRef();
-  const inputOccupationRef = useRef();
   const generalErrorRef = useRef();
 
   const web3 = getWeb3();
@@ -103,29 +104,6 @@ function NewInvoice(props) {
     checked: {},
     track: {},
   })(Switch);
-
-  //useEffect executes only when the memberID state changes.
-  useEffect(() => {
-    //Set the initial values of the Select controls for
-    //Cooperatives, Countries, Offices, Categories and
-    //Occupations.
-
-    //Cooperatives
-    setCurrentCooperative("cooperative00");
-
-    //Countries
-    setCurrentCountry("country00");
-
-    //Offices
-    setCurrentOffice("office00");
-
-    //Categories
-    setCurrentCategory("category00");
-
-    //Occupations
-    setCurrentOccupation("occupation00");
-    //We must to include [] in order to execute this only on Mount.
-  }, []);
 
   const cooperativeSelectHandler = (e) => {
     //Reset the errors.
@@ -432,6 +410,26 @@ function NewInvoice(props) {
       //Check USD Total amount
       //console.log("USD Total amount: ", usdTotalAmount);
 
+      //Check occupations
+      console.log("Occupations: ", selectedOccupations);
+      validInvoice = checkListField(selectedOccupations);
+      if (!validInvoice) {
+        if (currentCategory === "category00") {
+          errors.category =
+            "Please select a category associated with the invoice";
+          if (!previousError) {
+            previousError = true;
+            inputCategoryRef.current.focus();
+          }
+        } else {
+          errors.occupations = "Please select an occupation for the category";
+          if (!previousError) {
+            previousError = true;
+            inputOccupationRef.current.focus();
+          }
+        }
+      }
+
       //Check Age
       //console.log("Age: ", age);
       validInvoice = checkTextField(age);
@@ -490,26 +488,6 @@ function NewInvoice(props) {
         }
       }
 
-      //Check occupations
-      console.log("Occupations: ", selectedOccupations);
-      validInvoice = checkListField(selectedOccupations);
-      if (!validInvoice) {
-        if (currentCategory === "category00") {
-          errors.category =
-            "Please select a category associated with the invoice";
-          if (!previousError) {
-            previousError = true;
-            inputCategoryRef.current.focus();
-          }
-        } else {
-          errors.occupations = "Please select an occupation for the category";
-          if (!previousError) {
-            previousError = true;
-            inputOccupationRef.current.focus();
-          }
-        }
-      }
-
       setErrorMessages(errors);
 
       //Check for errors.
@@ -531,11 +509,12 @@ function NewInvoice(props) {
     setSaveBlockchain(false);
     setConnectionErrorMessage("");
     setErrorMessages({});
+    setSuccessNewInvoice(false);
+    setLoading(true);
     let errors = {};
     try {
       if (isMetaMaskConnected) {
         console.log("saveInvoiceOKDialogHandler - MetaMask connected.");
-        setLoading(true);
         //First, check that the invoice number is not included in the blockchain.
         const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
         const existingInvoice = await invoice.methods
@@ -557,16 +536,16 @@ function NewInvoice(props) {
           console.log("VAT Base: ", vatBase);
           console.log("VAT Percentage: ", vatPercentage);
           console.log("USD Exchange rate: ", usdExchangeRate);
-          console.log("Age: ", age);
-          console.log("Gender: ", gender);
-          console.log("Cooperative: ", currentCooperative);
-          console.log("Country: ", currentCountry);
-          console.log("Office: ", currentOffice);
           //Save only the ids of the occupation(s) associated with the invoice.
           const occupationIds = selectedOccupations.map((occupation) => {
             return occupation.id;
           });
           console.log("Occupation Ids: ", occupationIds);
+          console.log("Age: ", age);
+          console.log("Gender: ", gender);
+          console.log("Cooperative: ", currentCooperative);
+          console.log("Country: ", currentCountry);
+          console.log("Office: ", currentOffice);
 
           //Adapt fields in order to store them in the blockchain
           const bytes16MemberCooperative =
@@ -615,16 +594,110 @@ function NewInvoice(props) {
           //Checking the blockchain
           const totalInvoices = await invoice.methods.getInvoiceCount().call();
           console.log("Total invoices: ", totalInvoices);
+          //SUMMARY
           const invoiceInfo = await invoice.methods
             .getInvoiceSummary(bytes32InvoiceId)
             .call();
-          const output = "[" + JSON.stringify(invoiceInfo) + "]";
+          const output = JSON.stringify(invoiceInfo);
           console.log("Invoice info: ", output);
+          const jsonSummaryOutput = JSON.parse(output);
+          console.log("Paid:", jsonSummaryOutput["0"]);
+          console.log(
+            "Invoice date: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonSummaryOutput["1"]).replace(/\u0000/g, "")
+          );
+          console.log(
+            "Due date: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonSummaryOutput["2"]).replace(/\u0000/g, "")
+          );
+          console.log(
+            "Gender: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonSummaryOutput["2"]).replace(/\u0000/g, "")
+          );
+          console.log(
+            "Age: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonSummaryOutput["3"]).replace(/\u0000/g, "")
+          );
+
+          //INVOICING INFO
+          const invoiceCostInfo = await invoice.methods
+            .getInvoicingInfo(bytes32InvoiceId)
+            .call();
+          const costOutput = JSON.stringify(invoiceCostInfo);
+          console.log("Invoice Cost info: ", costOutput);
+          const jsonCostOutput = JSON.parse(costOutput);
+          console.log(
+            "VAT Base: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonCostOutput["0"]).replace(/\u0000/g, "")
+          );
+          console.log(
+            "VAT Percentaje: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonCostOutput["1"]).replace(/\u0000/g, "")
+          );
+          console.log(
+            "USD Exchange rate: ",
+            // eslint-disable-next-line
+            web3.utils.toAscii(jsonCostOutput["2"]).replace(/\u0000/g, "")
+          );
+
+          //OCCUPATION INFO
+          const invoiceOccupations = await invoice.methods
+            .getOccupationsInfo(bytes32InvoiceId)
+            .call();
+          const outputOccupations = JSON.stringify(invoiceOccupations);
+          console.log("Invoice Occupations: ", outputOccupations);
+          for (var i = 0; i < invoiceOccupations.length; i++) {
+            console.log(
+              "Occupation [",
+              i,
+              "]: ",
+              // eslint-disable-next-line
+              web3.utils.toAscii(invoiceOccupations[i]).replace(/\u0000/g, "")
+            );
+          }
+
+          //LOCATION INFO
+          const memberLocation = await invoice.methods
+            .getMemberLocation(bytes32InvoiceId)
+            .call();
+          const outputLocation = JSON.stringify(memberLocation);
+          console.log("Member location: ", outputLocation);
+          const jsonOutputLocation = JSON.parse(outputLocation);
+          console.log(
+            "Cooperative: ",
+            web3.utils
+              .toAscii(jsonOutputLocation["0"])
+              // eslint-disable-next-line
+              .replace(/\u0000/g, "")
+          );
+          console.log(
+            "Country: ",
+            web3.utils
+              .toAscii(jsonOutputLocation["1"])
+              // eslint-disable-next-line
+              .replace(/\u0000/g, "")
+          );
+          console.log(
+            "Office: ",
+            web3.utils
+              .toAscii(jsonOutputLocation["2"])
+              // eslint-disable-next-line
+              .replace(/\u0000/g, "")
+          );
 
           setLoading(false);
-          setSuccessOperationComplete(true);
+          setSuccessNewInvoice(true);
+          generalErrorRef.current.focus();
         }
       } else {
+        setLoading(false);
+        setSuccessNewInvoice(false);
         setConnectionErrorMessage("MetaMask is unavailable.");
       }
     } catch (error) {
@@ -637,10 +710,35 @@ function NewInvoice(props) {
     }
   };
 
+  const resetNewInvoiceFormFields = () => {
+    setPaidInvoice(false);
+    setDocNumber("");
+    setInvoiceDate("");
+    setDueDate("");
+    setVatBase("");
+    setVatPercentage("");
+    setVatTotal("");
+    setEurTotalAmount("");
+    setUsdExchangeRate("");
+    setUsdTotalAmount("");
+    setCurrentCategory("category00");
+    setCurrentOccupation("occupation00");
+    setSelectedOccupations([]);
+    setAge("");
+    setGender("female");
+    setCurrentCooperative("cooperative00");
+    setSelectedCountries([]);
+    setCurrentCountry("country00");
+    setCurrentOffice("office00");
+    setSuccessNewInvoice(false);
+  };
+
   const saveInvoiceCancelDialogHandler = () => {
     setSaveBlockchain(false);
     setConnectionErrorMessage("");
     setErrorMessages({});
+    setSuccessNewInvoice(false);
+
     console.log("The invoice will not be stored in the blockchain.");
   };
 
@@ -652,7 +750,7 @@ function NewInvoice(props) {
   };
 
   return (
-    <div>
+    <>
       <Typography variant="h5" className={styles.title} noWrap>
         Add a new invoice
       </Typography>
@@ -881,6 +979,63 @@ function NewInvoice(props) {
             />
           </FormControl>
         </div>
+        <div className={styles.divForm}>
+          <TextField
+            id="selectCategory"
+            select
+            label="Category"
+            variant="outlined"
+            style={{ marginRight: "15px" }}
+            value={currentCategory}
+            onChange={categorySelectHandler}
+            error={!!errorMessages.category}
+            helperText={errorMessages.category}
+            inputRef={inputCategoryRef}
+          >
+            <MenuItem key="category00" value="category00">
+              Select a category...
+            </MenuItem>
+            {occupationCategories.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            id="selectOccupation"
+            select
+            label="Occupation"
+            variant="outlined"
+            value={currentOccupation}
+            onChange={occupationSelectHandler}
+            disabled={currentCategory === "category00"}
+            error={!!errorMessages.occupations}
+            helperText={errorMessages.occupations}
+            inputRef={inputOccupationRef}
+          >
+            <MenuItem key="occupation00" value="occupation00">
+              Select an occupation...
+            </MenuItem>
+            {occupations.map((option) =>
+              option.category === currentCategory ? (
+                <MenuItem
+                  key={option.id}
+                  value={option.id}
+                  data-name={option.name}
+                >
+                  {option.name}
+                </MenuItem>
+              ) : null
+            )}
+          </TextField>
+        </div>
+        <div>
+          <InvoiceOccupations
+            occupations={selectedOccupations}
+            clicked={deleteMemberOccupationHandler}
+            canDelete={true}
+          />
+        </div>
         <br />
         <Divider />
         <Typography variant="h6" className={styles.title} noWrap>
@@ -1017,65 +1172,34 @@ function NewInvoice(props) {
             )}
           </TextField>
         </div>
-        <div className={styles.divForm}>
-          <TextField
-            id="selectCategory"
-            select
-            label="Category"
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-            value={currentCategory}
-            onChange={categorySelectHandler}
-            error={!!errorMessages.category}
-            helperText={errorMessages.category}
-            inputRef={inputCategoryRef}
-          >
-            <MenuItem key="category00" value="category00">
-              Select a category...
-            </MenuItem>
-            {occupationCategories.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            id="selectOccupation"
-            select
-            label="Occupation"
-            variant="outlined"
-            value={currentOccupation}
-            onChange={occupationSelectHandler}
-            disabled={currentCategory === "category00"}
-            error={!!errorMessages.occupations}
-            helperText={errorMessages.occupations}
-            inputRef={inputOccupationRef}
-          >
-            <MenuItem key="occupation00" value="occupation00">
-              Select an occupation...
-            </MenuItem>
-            {occupations.map((option) =>
-              option.category === currentCategory ? (
-                <MenuItem
-                  key={option.id}
-                  value={option.id}
-                  data-name={option.name}
-                >
-                  {option.name}
-                </MenuItem>
-              ) : null
-            )}
-          </TextField>
-        </div>
-        <div>
-          <InvoiceOccupations
-            occupations={selectedOccupations}
-            clicked={deleteMemberOccupationHandler}
-            canDelete={true}
-          />
-        </div>
         {!!errorMessages.general ? (
-          <Alert severity="error" message={errorMessages.general} />
+          <Alert variant="filled" severity="error">
+            {errorMessages.general}
+          </Alert>
+        ) : null}
+        {successNewInvoice ? (
+          <div style={{ marginTop: "20px" }}>
+            <Alert
+              severity="success"
+              variant="filled"
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setSuccessNewInvoice(false);
+                    resetNewInvoiceFormFields();
+                    inputDocNumberRef.current.focus();
+                  }}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              The invoice has beed added successfully!
+            </Alert>
+          </div>
         ) : null}
         <div className={styles.divButtonForm}>
           <Button
@@ -1084,7 +1208,7 @@ function NewInvoice(props) {
             size="large"
             startIcon={loading ? null : <SaveIcon />}
             type="submit"
-            disabled={loading}
+            disabled={loading || successNewInvoice}
             ref={generalErrorRef}
           >
             {loading ? (
@@ -1112,13 +1236,7 @@ function NewInvoice(props) {
           errorMessage={connectionErrorMessage}
         />
       ) : null}
-      {successOperationComplete ? (
-        <Alert
-          severity="success"
-          message="The invoice has beed added successfully!"
-        />
-      ) : null}
-    </div>
+    </>
   );
 }
 

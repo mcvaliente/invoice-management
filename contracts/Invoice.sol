@@ -8,6 +8,7 @@ contract Invoice {
         bool paid;
         bytes16 invoiceDate; //aaaa-mm-dd
         bytes16 dueDate; //aaaa-mm-dd
+        bytes16[] occupations;
         CostInfo amount ;
         MemberInfo member;
         bool validInvoice;
@@ -21,7 +22,6 @@ contract Invoice {
     }
  
      struct MemberInfo {
-        bytes16[] occupations;
         bytes16 gender; //female, male, other
         uint256 age;
         LocationInfo location;
@@ -57,8 +57,7 @@ contract Invoice {
         MemberInfo memory memberData = MemberInfo({
             gender: gender,
             age: age,
-            location: locationData,
-            occupations: occupations
+            location: locationData
         });
         
         CostInfo memory amountData = CostInfo({
@@ -71,6 +70,7 @@ contract Invoice {
             paid: paid,
             invoiceDate: invoiceDates[0],
             dueDate: invoiceDates[1],
+            occupations: occupations,
             amount: amountData,
             member: memberData,
             validInvoice: true
@@ -128,7 +128,19 @@ contract Invoice {
         );
     }
 
-    function getMemberLocation(bytes32 invoiceId)
+    function getOccupationsInfo(bytes32 invoiceId)
+        public
+        view
+        returns (
+            bytes16[] memory
+        )
+    {
+        return (
+            invoices[invoiceId].occupations
+        );
+    }
+
+   function getMemberLocation(bytes32 invoiceId)
         public
         view
         returns (

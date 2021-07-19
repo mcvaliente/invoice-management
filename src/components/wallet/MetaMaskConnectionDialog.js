@@ -30,9 +30,9 @@ export default function MetaMaskConnectionDialog(props) {
             {props.errorMessage}
             <br />
             <br />
-            Please, close this dialog and check your MetaMask browser extension.
-            Then connect with MetaMask by clicking on the above button and try
-            again.
+            Please, check your MetaMask browser extension.
+            <br />
+            Then close this dialog try again.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

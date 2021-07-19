@@ -184,6 +184,30 @@ describe("Invoices", () => {
     }
   });
 
+  it("gets the occupations info of the invoice", async () => {
+    try {
+      const occupationInfo = await invoice.methods
+        .getOccupationsInfo(invoiceId)
+        .call();
+      console.log("Occupations info: ", occupationInfo);
+      for (var i = 0; i < occupationInfo.length; i++) {
+        console.log(
+          "Occupation (",
+          i,
+          "): ",
+          web3.utils.toAscii(occupationInfo[i]).replace(/\u0000/g, "")
+        );
+      }
+      assert.strictEqual(
+        web3.utils.toAscii(occupationInfo[0]).replace(/\u0000/g, ""),
+        "occ04007"
+      );
+    } catch (err) {
+      console.log("Occupations info catched exception: ", err);
+      assert.ok(err);
+    }
+  });
+
   it("checks if a specific invoice exists", async () => {
     try {
       const validInvoice = await invoice.methods
