@@ -24,6 +24,8 @@ import {
   FormLabel,
   MenuItem,
   Switch,
+  Fab,
+  Tooltip,
 } from "@material-ui/core";
 import styles from "../../assets/css/InvoiceInfo.module.css";
 import { Loader } from "../../utils/Loader";
@@ -31,6 +33,8 @@ import InvoiceOccupations from "./InvoiceOccupations";
 import Alert from "@material-ui/lab/Alert";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
+import AddIcon from "@material-ui/icons/Add";
+import Layout from "../shared/Layout";
 
 const GreenSwitch = withStyles({
   switchBase: {
@@ -76,25 +80,22 @@ export default function InvoiceInfo(props) {
     props.metaMaskConnected
   );
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
-
-  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const [reloadPage, setReloadPage] = useState(false);
 
   const web3 = getWeb3();
 
   useEffect(() => {
-    //The page must be reloaded because when the id changes the header is not shown.
-    console.log("Parameter id: ", id);
-    setInvoiceId(id);
     async function getInvoiceInfo() {
       setLoading(true);
       try {
+        console.log("Parameter id: ", id);
+        setInvoiceId(id);
         if (isMetaMaskConnected) {
           //Check if the invoice is stored in the blockchain.
           setLoading(false);
         } else {
-          await delay(3000);
           setLoading(false);
-          setConnectionErrorMessage("MetaMask is unavailable.");
+          setConnectionErrorMessage("Invoice Info - MetaMask is unavailable.");
         }
       } catch (error) {
         setLoading(false);
@@ -118,8 +119,14 @@ export default function InvoiceInfo(props) {
 
   return (
     <>
-      <div style={{ marginBottom: "30px" }}>
-        <NavLink to="/">Volver</NavLink>
+      <div style={{ marginTop: "30px", marginBottom: "30px", float: "right" }}>
+        <Tooltip title="Add a new invoice" arrow>
+          <NavLink to="/" alt="">
+            <Fab color="primary" aria-label="add">
+              <AddIcon />
+            </Fab>
+          </NavLink>
+        </Tooltip>
       </div>
       <Typography variant="h5" className={styles.title} noWrap>
         {invoiceId}

@@ -1,5 +1,5 @@
 import React from "react";
-import NewInvoice from "../invoice/NewInvoice";
+import InvoiceInfo from "../invoice/InvoiceInfo";
 import Layout from "../shared/Layout";
 
 export default function Home(props) {
@@ -9,7 +9,7 @@ export default function Home(props) {
         metaMaskConnected={props.metaMaskConnected}
         clicked={props.clicked}
       >
-        <NewInvoice metaMaskConnected={props.metaMaskConnected} />
+        <InvoiceInfo metaMaskConnected={props.metaMaskConnected} />
       </Layout>
     </>
   );

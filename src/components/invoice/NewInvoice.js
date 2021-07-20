@@ -697,7 +697,7 @@ function NewInvoice(props) {
       } else {
         setLoading(false);
         setSuccessNewInvoice(false);
-        setConnectionErrorMessage("MetaMask is unavailable.");
+        setConnectionErrorMessage("New invoice - MetaMask is unavailable.");
       }
     } catch (error) {
       setLoading(false);

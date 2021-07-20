@@ -37,3 +37,9 @@ input[type="date" i]:hover {
   text-align: center;
   z-index: 999999999999999;
 }
+
+/***Material UI Fab button***/
+.MuiFab-primary {
+  color: #fff;
+  background-color: #aa4994 !important;
+}

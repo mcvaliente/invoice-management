@@ -8,8 +8,7 @@ import { checkMetaMask, checkNetwork, enableMetaMask } from "./utils/web3";
 import MetaMaskInstallationDialog from "./components/wallet/MetaMaskInstallationDialog";
 import MetaMaskNetworkDialog from "./components/wallet/MetaMaskNetworkDialog";
 import MetaMaskConnectionDialog from "./components/wallet/MetaMaskConnectionDialog";
-import InvoiceInfo from "./components/invoice/InvoiceInfo";
-import Layout from "./components/shared/Layout";
+import InvoiceSearch from "./components/invoice/InvoiceSearch";
 
 function App() {
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(true);
@@ -104,53 +103,48 @@ function App() {
   return (
     <>
       <Container>
-        <Layout
-          metamaskConnected={isMetaMaskConnected}
-          clicked={metamaskConnectionHandler}
-        >
-          <Switch>
-            {/* The Switch decides which component to show based on the current URL.*/}
-            <Route
-              exact
-              path="/"
-              component={() => (
-                <Home
-                  metaMaskConnected={isMetaMaskConnected}
-                  clicked={metamaskConnectionHandler}
-                />
-              )}
-            />
-            <Route
-              exact
-              path="/invoice/:id"
-              component={() => (
-                <InvoiceInfo
-                  metaMaskConnected={isMetaMaskConnected}
-                  clicked={metamaskConnectionHandler}
-                />
-              )}
-            />
-            {/* Redirect user to a specific page if the route does not exist. */}
-            <Route component={Error404} />
-          </Switch>
-          {isMetaMaskInstalled ? null : (
-            <MetaMaskInstallationDialog
-              metamaskDialogHandler={metamaskInstallationDialogHandler}
-            />
-          )}
-          {isValidNetwork ? null : (
-            <MetaMaskNetworkDialog
-              metamaskNetDialogHandler={metamaskNetworkDialogHandler}
-              currentNetwork={networkName}
-            />
-          )}
-          {!!connectionErrorMessage ? (
-            <MetaMaskConnectionDialog
-              metamaskConnDialogHandler={metamaskConnectionDialogHandler}
-              errorMessage={connectionErrorMessage}
-            />
-          ) : null}
-        </Layout>
+        <Switch>
+          {/* The Switch decides which component to show based on the current URL.*/}
+          <Route
+            exact
+            path="/"
+            component={() => (
+              <Home
+                metaMaskConnected={isMetaMaskConnected}
+                clicked={metamaskConnectionHandler}
+              />
+            )}
+          />
+          <Route
+            exact
+            path="/invoice/:id"
+            component={() => (
+              <InvoiceSearch
+                metaMaskConnected={isMetaMaskConnected}
+                clicked={metamaskConnectionHandler}
+              />
+            )}
+          />
+          {/* Redirect user to a specific page if the route does not exist. */}
+          <Route component={Error404} />
+        </Switch>
+        {isMetaMaskInstalled ? null : (
+          <MetaMaskInstallationDialog
+            metamaskDialogHandler={metamaskInstallationDialogHandler}
+          />
+        )}
+        {isValidNetwork ? null : (
+          <MetaMaskNetworkDialog
+            metamaskNetDialogHandler={metamaskNetworkDialogHandler}
+            currentNetwork={networkName}
+          />
+        )}
+        {!!connectionErrorMessage ? (
+          <MetaMaskConnectionDialog
+            metamaskConnDialogHandler={metamaskConnectionDialogHandler}
+            errorMessage={connectionErrorMessage}
+          />
+        ) : null}
       </Container>
     </>
   );
