@@ -1,0 +1,16 @@
+.invoiceInfo {
+  width: "25ch";
+}
+
+.title {
+  margin-top: 25px !important;
+}
+
+.divForm {
+  margin-bottom: 20px;
+}
+
+.spacer {
+  margin-bottom: 100px;
+  visibility: hidden;
+}

@@ -40,9 +40,8 @@ import CloseIcon from "@material-ui/icons/Close";
 import Alert from "@material-ui/lab/Alert";
 import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
-import { getWeb3 } from "../../utils/web3";
+import { getWeb3, getCurrentAccount } from "../../utils/web3";
 import invoice from "../../contracts/invoice";
-import { getCurrentAccount } from "../../utils/web3";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
 
