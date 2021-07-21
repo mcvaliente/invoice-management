@@ -13,10 +13,10 @@ body {
 /***Form date field***/
 /***Equivalent to:
 input#txtIssueDate.MuiInputBase-input.MuiOutlinedInput-input {
-  cursor: pointer !important;
+  cursor: text;
 }**/
-input[type="date" i]:hover {
-  cursor: pointer !important;
+input[type="date" i] {
+  cursor: text;
 }
 
 /***Form field disabled***/

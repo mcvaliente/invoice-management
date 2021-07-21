@@ -51,11 +51,14 @@ function NewInvoice(props) {
   const [invoiceDate, setInvoiceDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [vatBase, setVatBase] = useState("");
+  const [validVatBase, setValidVatBase] = useState(false);
   const [vatPercentage, setVatPercentage] = useState("");
-  const [vatTotal, setVatTotal] = useState("");
-  const [eurTotalAmount, setEurTotalAmount] = useState("");
+  const [validVatPercentage, setValidVatPercentage] = useState(false);
+  const [vatTotal, setVatTotal] = useState("0.00");
+  const [eurTotalAmount, setEurTotalAmount] = useState("0.00");
   const [usdExchangeRate, setUsdExchangeRate] = useState("");
-  const [usdTotalAmount, setUsdTotalAmount] = useState("");
+  const [validUsdExchangeRate, setValidUsdExchangeRate] = useState(false);
+  const [usdTotalAmount, setUsdTotalAmount] = useState("0.00");
   const [currentCategory, setCurrentCategory] = useState("category00");
   const [currentOccupation, setCurrentOccupation] = useState("occupation00");
   const [selectedOccupations, setSelectedOccupations] = useState([]);
@@ -197,16 +200,17 @@ function NewInvoice(props) {
     setErrorMessages({});
     let validField = checkNumberField(value);
     if (!validField) {
-      errors.vatBase = "Please enter a valid amount";
+      errors.vatBase = "Please enter a valid amount with 2 decimal places";
     } else if (!/^\d*(\.\d{2})$/.test(value)) {
       validField = false;
       errors.vatBase = "Please enter to 2 decimal places";
     }
-    if (!validField) {
+    if (validField) {
+      setValidVatBase(true);
+    } else {
       setErrorMessages(errors);
       inputVatBaseRef.current.focus();
     }
-    setVatBase(value);
   };
 
   const vatPercentageHandler = (e) => {
@@ -217,35 +221,35 @@ function NewInvoice(props) {
 
   const vatPercentageValidationHandler = (e) => {
     const value = e.target.value;
+    console.log("VAT Percentage: ", value);
     let errors = {};
     setErrorMessages({});
-    //First check if we have a valid value in the VAT base field.
-    let validField = checkNumberField(vatBase);
+    let validField = checkNumberField(value);
     if (!validField) {
-      inputVatBaseRef.current.focus();
-      errors.vatBase = "Please first enter invoice total amount";
-      setErrorMessages(errors);
-      setVatPercentage("");
-    } else {
-      validField = checkNumberField(value);
-      if (!validField) {
-        errors.vatPercentage = "Please enter a valid percentage";
-      } else if (!/^\d*(\.\d{2})$/.test(value)) {
-        validField = false;
-        errors.vatPercentage = "Please enter to 2 decimal places";
-      }
-      if (validField) {
-        const percentageAmount = Number(vatBase * (value / 100)).toFixed(2);
-        let eurAmount = Number(
+      errors.vatPercentage =
+        "Please enter a valid percentage with 2 decimal places";
+    } else if (!/^\d*(\.\d{2})$/.test(value)) {
+      validField = false;
+      errors.vatPercentage = "Please enter to 2 decimal places";
+    }
+    if (validField) {
+      setValidVatPercentage(true);
+      if (validVatBase) {
+        const percentageAmount = Number(
+          vatBase * (vatPercentage / 100)
+        ).toFixed(2);
+        console.log("VAT Base: ", vatBase);
+        console.log("VAT Percentage: ", value);
+        console.log("Percentage amount: ", percentageAmount);
+        const eurAmount = Number(
           parseFloat(vatBase) + parseFloat(percentageAmount)
         ).toFixed(2);
         setVatTotal(percentageAmount);
         setEurTotalAmount(eurAmount);
-      } else {
-        setErrorMessages(errors);
-        inputVatPercentageRef.current.focus();
       }
-      setVatPercentage(value);
+    } else {
+      setErrorMessages(errors);
+      inputVatPercentageRef.current.focus();
     }
   };
 
@@ -260,38 +264,21 @@ function NewInvoice(props) {
     //Check if the value is a number.
     let errors = {};
     setErrorMessages({});
-    //First check if we have a valid value in the VAT base field and in the VAT percentage.
-    let validField = checkNumberField(vatBase);
+    let validField = checkNumberField(value);
     if (!validField) {
-      inputVatBaseRef.current.focus();
-      errors.vatBase = "Please first enter invoice total amount";
-      setErrorMessages(errors);
-      setUsdExchangeRate("");
+      errors.usdExchangeRate =
+        "Please enter a valid rate with 6 decimal places";
+    } else if (!/^\d*(\.\d{6})$/.test(value)) {
+      validField = false;
+      errors.usdExchangeRate = "Please enter to 6 decimal places";
+    }
+    if (validField) {
+      setValidUsdExchangeRate(true);
+      const usdAmount = Number(eurTotalAmount * value).toFixed(2);
+      setUsdTotalAmount(usdAmount);
     } else {
-      validField = checkNumberField(vatPercentage);
-      if (!validField) {
-        inputVatPercentageRef.current.focus();
-        errors.vatPercentage = "Please first enter a percentage";
-        setErrorMessages(errors);
-        setUsdExchangeRate("");
-      } else {
-        validField = checkNumberField(value);
-        if (!validField) {
-          validField = false;
-          errors.usdExchangeRate = "Please enter a valid rate";
-        } else if (!/^\d*(\.\d{6})$/.test(value)) {
-          validField = false;
-          errors.usdExchangeRate = "Please enter to 6 decimal places";
-        }
-        if (validField) {
-          const usdAmount = Number(eurTotalAmount * value).toFixed(2);
-          setUsdTotalAmount(usdAmount);
-        } else {
-          setErrorMessages(errors);
-          inputUsdExchangeRateRef.current.focus();
-        }
-        setUsdExchangeRate(value);
-      }
+      setErrorMessages(errors);
+      inputUsdExchangeRateRef.current.focus();
     }
   };
 
@@ -368,8 +355,8 @@ function NewInvoice(props) {
       //Check VAT Base
       //console.log("VAT Base: ", vatBase);
       validInvoice = checkTextField(vatBase);
-      if (!validInvoice) {
-        errors.vatBase = "Please enter an amount";
+      if (!validInvoice || !validVatBase) {
+        errors.vatBase = "Please enter a valid amount";
         setErrorMessages(errors);
         if (!previousError) {
           previousError = true;
@@ -380,8 +367,8 @@ function NewInvoice(props) {
       //Check VAT Percentage
       //console.log("VAT Percentage: ", vatPercentage);
       validInvoice = checkTextField(vatPercentage);
-      if (!validInvoice) {
-        errors.vatPercentage = "Please enter a percentage";
+      if (!validInvoice || !validVatPercentage) {
+        errors.vatPercentage = "Please enter a valid percentage";
         setErrorMessages(errors);
         if (!previousError) {
           previousError = true;
@@ -398,8 +385,8 @@ function NewInvoice(props) {
       //Check USD Exchange rate
       //console.log("USD Exchange rate: ", usdExchangeRate);
       validInvoice = checkTextField(usdExchangeRate);
-      if (!validInvoice) {
-        errors.usdExchangeRate = "Please enter a rate";
+      if (!validInvoice || !validUsdExchangeRate) {
+        errors.usdExchangeRate = "Please enter a valid rate";
         setErrorMessages(errors);
         if (!previousError) {
           previousError = true;
