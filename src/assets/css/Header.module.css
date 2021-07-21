@@ -17,6 +17,10 @@
   align-self: flex-end;
 }
 
-.metaMaskButton {
+.metamaskButton {
   background-color: #aa4994 !important;
+}
+
+.hidden {
+  display: none;
 }

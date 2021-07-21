@@ -69,7 +69,7 @@ function NewInvoice(props) {
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(
-    props.metaMaskConnected
+    props.metamaskConnected
   );
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
   const [successNewInvoice, setSuccessNewInvoice] = useState(false);
@@ -762,6 +762,7 @@ function NewInvoice(props) {
           <FormControlLabel
             control={
               <GreenSwitch
+                id="swithPaid"
                 checked={paidInvoice}
                 onChange={paidInvoiceHandler}
                 name="checkedPaidInvoice"
@@ -1074,7 +1075,7 @@ function NewInvoice(props) {
             <FormLabel component="legend">Gender</FormLabel>
             <RadioGroup
               aria-label="gender"
-              name="gender1"
+              name="memberGender"
               value={gender}
               onChange={genderHandler}
               row

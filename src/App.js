@@ -110,8 +110,9 @@ function App() {
             path="/"
             component={() => (
               <Home
-                metaMaskConnected={isMetaMaskConnected}
+                metamaskConnected={isMetaMaskConnected}
                 clicked={metamaskConnectionHandler}
+                hideGeneralSearch={false}
               />
             )}
           />
@@ -120,8 +121,9 @@ function App() {
             path="/invoice/:id"
             component={() => (
               <InvoiceSearch
-                metaMaskConnected={isMetaMaskConnected}
+                metamaskConnected={isMetaMaskConnected}
                 clicked={metamaskConnectionHandler}
+                hideGeneralSearch={true}
               />
             )}
           />

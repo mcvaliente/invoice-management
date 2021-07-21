@@ -43,3 +43,8 @@ input[type="date" i]:hover {
   color: #fff;
   background-color: #aa4994 !important;
 }
+
+/***Material UI search icon: InvoiceSearchBar > TextField > SearchIcon***/
+.MuiSvgIcon-root:hover {
+  cursor: pointer;
+}

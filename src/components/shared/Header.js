@@ -55,16 +55,18 @@ const Header = (props) => {
           <Typography className={styles.title} variant="h5" noWrap>
             P2P Models
           </Typography>
-          <Tooltip title="Search for an invoice by doc number" arrow>
-            <IconButton
-              aria-label="search"
-              color="inherit"
-              style={{ marginRight: 20 }}
-              onClick={invoiceSearchHandler}
-            >
-              <SearchIcon />
-            </IconButton>
-          </Tooltip>
+          <div className={props.hideGeneralSearch ? styles.hidden : undefined}>
+            <Tooltip title="Search for an invoice by doc number" arrow>
+              <IconButton
+                aria-label="search"
+                color="inherit"
+                style={{ marginRight: 20 }}
+                onClick={invoiceSearchHandler}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Tooltip>
+          </div>
           <Tooltip title="What is a wallet?" arrow>
             <Link
               color="inherit"
@@ -77,7 +79,7 @@ const Header = (props) => {
           </Tooltip>
           <MetaMaskButton
             onClick={props.clicked}
-            className={styles.metaMaskButton}
+            className={styles.metamaskButton}
             disabled={props.metamaskConnected}
           >
             {props.metamaskConnected

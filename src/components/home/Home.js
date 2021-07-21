@@ -6,10 +6,11 @@ export default function Home(props) {
   return (
     <>
       <Layout
-        metaMaskConnected={props.metaMaskConnected}
+        metamaskConnected={props.metamaskConnected}
         clicked={props.clicked}
+        hideGeneralSearch={props.hideGeneralSearch}
       >
-        <NewInvoice metaMaskConnected={props.metaMaskConnected} />
+        <NewInvoice metamaskConnected={props.metamaskConnected} />
       </Layout>
     </>
   );

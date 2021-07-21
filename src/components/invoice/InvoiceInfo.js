@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getWeb3, getCurrentAccount } from "../../utils/web3";
 import invoice from "../../contracts/invoice";
-import { useParams, Redirect, NavLink } from "react-router-dom";
+import { useParams, NavLink } from "react-router-dom";
 import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
 import {
   cooperatives,
@@ -26,6 +26,7 @@ import {
   Switch,
   Fab,
   Tooltip,
+  IconButton,
 } from "@material-ui/core";
 import styles from "../../assets/css/InvoiceInfo.module.css";
 import { Loader } from "../../utils/Loader";
@@ -34,7 +35,8 @@ import Alert from "@material-ui/lab/Alert";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import AddIcon from "@material-ui/icons/Add";
-import Layout from "../shared/Layout";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import InvoiceSearchBar from "./InvoiceSearchBar";
 
 const GreenSwitch = withStyles({
   switchBase: {
@@ -55,7 +57,7 @@ export default function InvoiceInfo(props) {
   const { id } = useParams();
 
   const [paidInvoice, setPaidInvoice] = useState(false);
-  const [invoiceId, setInvoiceId] = useState("");
+  const [docNumber, setDocNumber] = useState(id);
   const [invoiceDate, setInvoiceDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [vatBase, setVatBase] = useState("");
@@ -77,7 +79,7 @@ export default function InvoiceInfo(props) {
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(
-    props.metaMaskConnected
+    props.metamaskConnected
   );
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
   const [reloadPage, setReloadPage] = useState(false);
@@ -88,8 +90,7 @@ export default function InvoiceInfo(props) {
     async function getInvoiceInfo() {
       setLoading(true);
       try {
-        console.log("Parameter id: ", id);
-        setInvoiceId(id);
+        console.log("Parameter id: ", docNumber);
         if (isMetaMaskConnected) {
           //Check if the invoice is stored in the blockchain.
           setLoading(false);
@@ -108,13 +109,17 @@ export default function InvoiceInfo(props) {
     }
 
     getInvoiceInfo();
-  }, [isMetaMaskConnected, id]);
+  }, [isMetaMaskConnected, docNumber]);
 
   const metamaskConnectionDialogHandler = () => {
     setConnectionErrorMessage("");
     //We assume that when the user closes this dialog
     //MetaMask will be available now.
     setIsMetaMaskConnected(true);
+  };
+
+  const invoiceIdSearchHandler = (invoiceValue) => {
+    setDocNumber(invoiceValue);
   };
 
   return (
@@ -128,9 +133,23 @@ export default function InvoiceInfo(props) {
           </NavLink>
         </Tooltip>
       </div>
-      <Typography variant="h5" className={styles.title} noWrap>
-        {invoiceId}
-      </Typography>
+      <div style={{ marginTop: "30px" }}>
+        <Tooltip title="Return to homepage" arrow>
+          <NavLink to="/">
+            {" "}
+            <IconButton>
+              <ArrowBackIcon />
+            </IconButton>
+          </NavLink>
+        </Tooltip>
+      </div>
+      <div style={{ marginTop: "30px", marginBottom: "30px" }}>
+        <InvoiceSearchBar
+          defaultValue={docNumber}
+          metamaskConnected={isMetaMaskConnected}
+          invoiceValueHandler={invoiceIdSearchHandler}
+        />
+      </div>
       <form className={styles.invoiceInfo}>
         <Typography variant="h6" className={styles.title} noWrap>
           Invoice details
@@ -154,7 +173,7 @@ export default function InvoiceInfo(props) {
             <OutlinedInput
               id="inputInvoiceId"
               labelWidth={50}
-              value={invoiceId}
+              value={docNumber}
               readOnly
             />
           </FormControl>
