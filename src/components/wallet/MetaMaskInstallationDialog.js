@@ -62,7 +62,7 @@ export default function MetaMaskInstallationDialog(props) {
             </Link>
           </DialogContentText>
           <Link href="https://metamask.io/download.html" target="_blank">
-            <MetaMaskButton size="small">
+            <MetaMaskButton size="small" className="metamaskButton">
               Get MetaMask Browser Extension
             </MetaMaskButton>
           </Link>

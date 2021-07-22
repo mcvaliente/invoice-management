@@ -32,11 +32,14 @@ import {
   CircularProgress,
   MenuItem,
   IconButton,
+  Tooltip,
+  Fab,
 } from "@material-ui/core";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import SaveIcon from "@material-ui/icons/Save";
 import CloseIcon from "@material-ui/icons/Close";
+import AddIcon from "@material-ui/icons/Add";
 import Alert from "@material-ui/lab/Alert";
 import styles from "../../assets/css/NewInvoice.module.css";
 import InvoiceOccupations from "./InvoiceOccupations";
@@ -71,9 +74,6 @@ function NewInvoice(props) {
   const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
-  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(
-    props.metamaskConnected
-  );
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
   const [successNewInvoice, setSuccessNewInvoice] = useState(false);
 
@@ -499,7 +499,7 @@ function NewInvoice(props) {
     setLoading(true);
     let errors = {};
     try {
-      if (isMetaMaskConnected) {
+      if (props.metamaskConnected) {
         console.log("saveInvoiceOKDialogHandler - MetaMask connected.");
         //First, check that the invoice number is not included in the blockchain.
         const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
@@ -682,9 +682,10 @@ function NewInvoice(props) {
           generalErrorRef.current.focus();
         }
       } else {
+        console.log("New invoice - MetaMask is unavailable.");
         setLoading(false);
         setSuccessNewInvoice(false);
-        setConnectionErrorMessage("New invoice - MetaMask is unavailable.");
+        setConnectionErrorMessage("MetaMask is unavailable.");
       }
     } catch (error) {
       setLoading(false);
@@ -730,13 +731,28 @@ function NewInvoice(props) {
 
   const metamaskConnectionDialogHandler = () => {
     setConnectionErrorMessage("");
-    //We assume that when the user closes this dialog
-    //MetaMask will be available now.
-    setIsMetaMaskConnected(true);
+  };
+
+  const addInvoiceButtonHandler = () => {
+    setSuccessNewInvoice(false);
+    resetNewInvoiceFormFields();
+    inputDocNumberRef.current.focus();
   };
 
   return (
     <>
+      <div style={{ marginTop: "30px", marginBottom: "30px", float: "right" }}>
+        <Tooltip title="Add a new invoice" arrow>
+          <Fab
+            color="primary"
+            aria-label="add"
+            disabled={!successNewInvoice}
+            onClick={addInvoiceButtonHandler}
+          >
+            <AddIcon />
+          </Fab>
+        </Tooltip>
+      </div>
       <Typography variant="h5" className={styles.title} noWrap>
         Add a new invoice
       </Typography>
@@ -1170,18 +1186,20 @@ function NewInvoice(props) {
               severity="success"
               variant="filled"
               action={
-                <IconButton
-                  aria-label="close"
-                  color="inherit"
-                  size="small"
-                  onClick={() => {
-                    setSuccessNewInvoice(false);
-                    resetNewInvoiceFormFields();
-                    inputDocNumberRef.current.focus();
-                  }}
-                >
-                  <CloseIcon fontSize="inherit" />
-                </IconButton>
+                <Tooltip title="Close if you want to add a new invoice." arrow>
+                  <IconButton
+                    aria-label="close"
+                    color="inherit"
+                    size="small"
+                    onClick={() => {
+                      setSuccessNewInvoice(false);
+                      resetNewInvoiceFormFields();
+                      inputDocNumberRef.current.focus();
+                    }}
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
+                </Tooltip>
               }
             >
               The invoice has beed added successfully!

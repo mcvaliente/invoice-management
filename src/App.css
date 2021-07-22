@@ -4,6 +4,11 @@ body {
   min-height: 100vh;
 }
 
+/***Rimble UI: MetaMask button***/
+.metamaskButton {
+  background-color: #aa4994 !important;
+}
+
 /*** Material UI Form button style ***/
 .MuiButton-containedPrimary {
   color: #fff;

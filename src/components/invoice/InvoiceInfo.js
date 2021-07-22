@@ -31,12 +31,12 @@ import {
 import styles from "../../assets/css/InvoiceInfo.module.css";
 import { Loader } from "../../utils/Loader";
 import InvoiceOccupations from "./InvoiceOccupations";
-import Alert from "@material-ui/lab/Alert";
 import { withStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
 import AddIcon from "@material-ui/icons/Add";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import InvoiceSearchBar from "./InvoiceSearchBar";
+import AlertDialog from "../shared/AlertDialog";
 
 const GreenSwitch = withStyles({
   switchBase: {
@@ -77,31 +77,42 @@ export default function InvoiceInfo(props) {
   const [currentOffice, setCurrentOffice] = useState("office00");
   const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMessages, setErrorMessages] = useState({});
-  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(
-    props.metamaskConnected
-  );
+  const [errorMessage, setErrorMessage] = useState("");
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
-  const [reloadPage, setReloadPage] = useState(false);
-
-  const web3 = getWeb3();
 
   useEffect(() => {
     async function getInvoiceInfo() {
+      const web3 = getWeb3();
       setLoading(true);
       try {
         console.log("Parameter id: ", docNumber);
-        if (isMetaMaskConnected) {
+        if (props.metamaskConnected) {
           //Check if the invoice is stored in the blockchain.
+          const bytes32InvoiceId = web3.utils.fromAscii(
+            docNumber.toUpperCase()
+          );
+          const existingInvoice = await invoice.methods
+            .invoiceExists(bytes32InvoiceId)
+            .call();
+          console.log("Existing invoice: ", existingInvoice);
+          if (existingInvoice) {
+            alert("Get invoice info.");
+          } else {
+            setErrorMessage(
+              "The invoice '" +
+                docNumber +
+                "' cannot be found. Please enter a new invoice document number."
+            );
+          }
           setLoading(false);
         } else {
+          console.log("Invoice Info - MetaMask is unavailable.");
           setLoading(false);
-          setConnectionErrorMessage("Invoice Info - MetaMask is unavailable.");
         }
       } catch (error) {
         setLoading(false);
         console.error(
-          "EXCEPTION ERROR - New invoice MetaMask Error (saveInvoiceOKDialogHandler): " +
+          "EXCEPTION ERROR - Invoice info MetaMask Error (useEffect): " +
             error.message
         );
         setConnectionErrorMessage("EXCEPTION ERROR: " + error.message);
@@ -109,17 +120,18 @@ export default function InvoiceInfo(props) {
     }
 
     getInvoiceInfo();
-  }, [isMetaMaskConnected, docNumber]);
+  }, [props.metamaskConnected, docNumber]);
 
   const metamaskConnectionDialogHandler = () => {
     setConnectionErrorMessage("");
-    //We assume that when the user closes this dialog
-    //MetaMask will be available now.
-    setIsMetaMaskConnected(true);
   };
 
   const invoiceIdSearchHandler = (invoiceValue) => {
     setDocNumber(invoiceValue);
+  };
+
+  const alertDialogHandler = () => {
+    setErrorMessage("");
   };
 
   return (
@@ -146,7 +158,6 @@ export default function InvoiceInfo(props) {
       <div style={{ marginTop: "30px", marginBottom: "30px" }}>
         <InvoiceSearchBar
           defaultValue={docNumber}
-          metamaskConnected={isMetaMaskConnected}
           invoiceValueHandler={invoiceIdSearchHandler}
         />
       </div>
@@ -410,17 +421,19 @@ export default function InvoiceInfo(props) {
             )}
           </TextField>
         </div>
-        {!!errorMessages.general ? (
-          <Alert variant="filled" severity="error">
-            {errorMessages.general}
-          </Alert>
-        ) : null}
         <div className={styles.spacer}> </div>
       </form>{" "}
       {!!connectionErrorMessage ? (
         <MetaMaskConnectionDialog
           metamaskConnDialogHandler={metamaskConnectionDialogHandler}
           errorMessage={connectionErrorMessage}
+        />
+      ) : null}
+      {!!errorMessage ? (
+        <AlertDialog
+          alertDialogHandler={alertDialogHandler}
+          title={"Invoice information"}
+          errorMessage={errorMessage}
         />
       ) : null}
       {loading ? <Loader /> : null}

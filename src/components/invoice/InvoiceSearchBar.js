@@ -31,7 +31,7 @@ const InvoiceSearchBar = (props) => {
     <>
       <TextField
         id="txtInvoiceId"
-        label="Invoice"
+        label="Search for an invoice"
         placeholder="Invoice document number"
         type="text"
         variant="outlined"
@@ -46,6 +46,7 @@ const InvoiceSearchBar = (props) => {
             </InputAdornment>
           ),
         }}
+        autoFocus
       />
     </>
   );

@@ -5,6 +5,7 @@ import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
+import { MetaMaskButton } from "rimble-ui";
 
 export default function MetaMaskConnectionDialog(props) {
   const [openConnectionDialog, setOpenConnectionDialog] = useState(true);
@@ -30,9 +31,19 @@ export default function MetaMaskConnectionDialog(props) {
             {props.errorMessage}
             <br />
             <br />
-            Please, check your MetaMask browser extension.
+            Please, close this dialog and click on the button "Connect with
+            MetaMask".
             <br />
-            Then close this dialog try again.
+            <br />
+            <MetaMaskButton
+              disabled={true}
+              size="small"
+              className="metamaskButton"
+            >
+              {props.metamaskConnected
+                ? "Connected with MetaMask"
+                : "Connect with MetaMask"}
+            </MetaMaskButton>
           </DialogContentText>
         </DialogContent>
         <DialogActions>

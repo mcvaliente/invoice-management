@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import { Container } from "@material-ui/core";
 import Home from "./components/home/Home";
@@ -17,6 +17,14 @@ function App() {
   const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(false);
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
   const [reloadPage, setReloadPage] = useState(false);
+
+  useEffect(() => {
+    if (!isMetaMaskConnected) {
+      setConnectionErrorMessage(
+        "A MetaMask connection with the Rinkeby Test Network is required to use this application."
+      );
+    }
+  }, [isMetaMaskConnected]);
 
   const metamaskConnectionHandler = async () => {
     //User clicked on the "Connect with MetaMask" button.

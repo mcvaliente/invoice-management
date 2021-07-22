@@ -79,7 +79,7 @@ const Header = (props) => {
           </Tooltip>
           <MetaMaskButton
             onClick={props.clicked}
-            className={styles.metamaskButton}
+            className="metamaskButton"
             disabled={props.metamaskConnected}
           >
             {props.metamaskConnected
