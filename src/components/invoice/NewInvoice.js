@@ -6,7 +6,8 @@ import {
   greaterThanFirstDate,
   checkNumberField,
   checkListField,
-} from "../../utils/FormFieldsValidation";
+  getPercentageAmount,
+} from "../../utils/InvoiceFieldsValidation";
 import {
   cooperatives,
   countries,
@@ -221,7 +222,6 @@ function NewInvoice(props) {
 
   const vatPercentageValidationHandler = (e) => {
     const value = e.target.value;
-    console.log("VAT Percentage: ", value);
     let errors = {};
     setErrorMessages({});
     let validField = checkNumberField(value);
@@ -235,12 +235,10 @@ function NewInvoice(props) {
     if (validField) {
       setValidVatPercentage(true);
       if (validVatBase) {
-        const percentageAmount = Number(
-          vatBase * (vatPercentage / 100)
-        ).toFixed(2);
-        console.log("VAT Base: ", vatBase);
-        console.log("VAT Percentage: ", value);
-        console.log("Percentage amount: ", percentageAmount);
+        const percentageAmount = getPercentageAmount(vatBase, value);
+        //console.log("VAT Base: ", vatBase);
+        //console.log("VAT Percentage: ", value);
+        //console.log("Percentage amount: ", percentageAmount);
         const eurAmount = Number(
           parseFloat(vatBase) + parseFloat(percentageAmount)
         ).toFixed(2);
@@ -397,7 +395,7 @@ function NewInvoice(props) {
       //console.log("USD Total amount: ", usdTotalAmount);
 
       //Check occupations
-      console.log("Occupations: ", selectedOccupations);
+      //console.log("Occupations: ", selectedOccupations);
       validInvoice = checkListField(selectedOccupations);
       if (!validInvoice) {
         if (currentCategory === "category00") {
@@ -506,7 +504,6 @@ function NewInvoice(props) {
         const existingInvoice = await invoice.methods
           .invoiceExists(bytes32InvoiceId)
           .call();
-        console.log("Existing invoice: ", existingInvoice);
         if (existingInvoice) {
           errors.docNumber =
             "There is an existing invoice with the same doc number. Please enter a new invoice document number";
@@ -515,6 +512,7 @@ function NewInvoice(props) {
           setLoading(false);
         } else {
           //Fields to store in the blockchain
+          console.log(">>> FIELDS TO STORE IN THE BLOCKCHAIN");
           console.log("Paid invoice:", paidInvoice);
           console.log("Invoice number: ", docNumber);
           console.log("Invoice date: ", invoiceDate);
@@ -577,105 +575,10 @@ function NewInvoice(props) {
               from: currentAccount,
               gas: "2000000",
             });
+
           //Checking the blockchain
-          const totalInvoices = await invoice.methods.getInvoiceCount().call();
-          console.log("Total invoices: ", totalInvoices);
-          //SUMMARY
-          const invoiceInfo = await invoice.methods
-            .getInvoiceSummary(bytes32InvoiceId)
-            .call();
-          const output = JSON.stringify(invoiceInfo);
-          console.log("Invoice info: ", output);
-          const jsonSummaryOutput = JSON.parse(output);
-          console.log("Paid:", jsonSummaryOutput["0"]);
-          console.log(
-            "Invoice date: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonSummaryOutput["1"]).replace(/\u0000/g, "")
-          );
-          console.log(
-            "Due date: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonSummaryOutput["2"]).replace(/\u0000/g, "")
-          );
-          console.log(
-            "Gender: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonSummaryOutput["2"]).replace(/\u0000/g, "")
-          );
-          console.log(
-            "Age: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonSummaryOutput["3"]).replace(/\u0000/g, "")
-          );
-
-          //INVOICING INFO
-          const invoiceCostInfo = await invoice.methods
-            .getInvoicingInfo(bytes32InvoiceId)
-            .call();
-          const costOutput = JSON.stringify(invoiceCostInfo);
-          console.log("Invoice Cost info: ", costOutput);
-          const jsonCostOutput = JSON.parse(costOutput);
-          console.log(
-            "VAT Base: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonCostOutput["0"]).replace(/\u0000/g, "")
-          );
-          console.log(
-            "VAT Percentaje: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonCostOutput["1"]).replace(/\u0000/g, "")
-          );
-          console.log(
-            "USD Exchange rate: ",
-            // eslint-disable-next-line
-            web3.utils.toAscii(jsonCostOutput["2"]).replace(/\u0000/g, "")
-          );
-
-          //OCCUPATION INFO
-          const invoiceOccupations = await invoice.methods
-            .getOccupationsInfo(bytes32InvoiceId)
-            .call();
-          const outputOccupations = JSON.stringify(invoiceOccupations);
-          console.log("Invoice Occupations: ", outputOccupations);
-          for (var i = 0; i < invoiceOccupations.length; i++) {
-            console.log(
-              "Occupation [",
-              i,
-              "]: ",
-              // eslint-disable-next-line
-              web3.utils.toAscii(invoiceOccupations[i]).replace(/\u0000/g, "")
-            );
-          }
-
-          //LOCATION INFO
-          const memberLocation = await invoice.methods
-            .getMemberLocation(bytes32InvoiceId)
-            .call();
-          const outputLocation = JSON.stringify(memberLocation);
-          console.log("Member location: ", outputLocation);
-          const jsonOutputLocation = JSON.parse(outputLocation);
-          console.log(
-            "Cooperative: ",
-            web3.utils
-              .toAscii(jsonOutputLocation["0"])
-              // eslint-disable-next-line
-              .replace(/\u0000/g, "")
-          );
-          console.log(
-            "Country: ",
-            web3.utils
-              .toAscii(jsonOutputLocation["1"])
-              // eslint-disable-next-line
-              .replace(/\u0000/g, "")
-          );
-          console.log(
-            "Office: ",
-            web3.utils
-              .toAscii(jsonOutputLocation["2"])
-              // eslint-disable-next-line
-              .replace(/\u0000/g, "")
-          );
+          //const totalInvoices = await invoice.methods.getInvoiceCount().call();
+          //console.log("Total invoices: ", totalInvoices);
 
           setLoading(false);
           setSuccessNewInvoice(true);
@@ -725,7 +628,6 @@ function NewInvoice(props) {
     setConnectionErrorMessage("");
     setErrorMessages({});
     setSuccessNewInvoice(false);
-
     console.log("The invoice will not be stored in the blockchain.");
   };
 
@@ -743,14 +645,16 @@ function NewInvoice(props) {
     <>
       <div style={{ marginTop: "30px", marginBottom: "30px", float: "right" }}>
         <Tooltip title="Add a new invoice" arrow>
-          <Fab
-            color="primary"
-            aria-label="add"
-            disabled={!successNewInvoice}
-            onClick={addInvoiceButtonHandler}
-          >
-            <AddIcon />
-          </Fab>
+          <span>
+            <Fab
+              color="primary"
+              aria-label="add"
+              disabled={!successNewInvoice}
+              onClick={addInvoiceButtonHandler}
+            >
+              <AddIcon />
+            </Fab>
+          </span>
         </Tooltip>
       </div>
       <Typography variant="h5" className={styles.title} noWrap>
@@ -1206,7 +1110,11 @@ function NewInvoice(props) {
             </Alert>
           </div>
         ) : null}
-        <div className={styles.divButtonForm}>
+        <div
+          className={styles.divButtonForm}
+          ref={generalErrorRef}
+          tabIndex={-1}
+        >
           <Button
             variant="contained"
             color="primary"
@@ -1214,7 +1122,6 @@ function NewInvoice(props) {
             startIcon={loading ? null : <SaveIcon />}
             type="submit"
             disabled={loading || successNewInvoice}
-            ref={generalErrorRef}
           >
             {loading ? (
               <CircularProgress style={{ color: "white" }} size="30px" />

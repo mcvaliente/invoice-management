@@ -17,7 +17,6 @@ export default function InvoiceOccupations(props) {
         startIcon={props.canDelete ? <DeleteIcon /> : null}
         key={occupation.id}
         onClick={props.canDelete ? () => props.clicked(index) : null}
-        disabled={!props.canDelete}
       >
         {occupation.name}
       </Button>
