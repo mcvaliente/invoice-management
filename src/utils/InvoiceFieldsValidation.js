@@ -68,11 +68,3 @@ export function getPercentageAmount(vatBase, vatPercentage) {
   const percentageAmount = Number(vatBase * (vatPercentage / 100)).toFixed(2);
   return percentageAmount;
 }
-
-export function isUnpaidInvoice(dueDate) {
-  const currentDate = new Date();
-  if (dueDate < currentDate) {
-    return true;
-  }
-  return false;
-}

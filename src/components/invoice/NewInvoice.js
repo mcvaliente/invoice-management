@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   checkTextField,
   checkDateField,
@@ -47,7 +47,6 @@ import InvoiceOccupations from "./InvoiceOccupations";
 import { getWeb3, getCurrentAccount } from "../../utils/web3";
 import invoice from "../../contracts/invoice";
 import ConfirmDialog from "../shared/ConfirmDialog";
-import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
 
 function NewInvoice(props) {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -75,7 +74,6 @@ function NewInvoice(props) {
   const [saveBlockchain, setSaveBlockchain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
-  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
   const [successNewInvoice, setSuccessNewInvoice] = useState(false);
 
   const inputDocNumberRef = useRef();
@@ -90,7 +88,7 @@ function NewInvoice(props) {
   const inputCooperativeRef = useRef();
   const inputCountryRef = useRef();
   const inputOfficeRef = useRef();
-  const generalErrorRef = useRef();
+  const generalDivRef = useRef();
 
   const web3 = getWeb3();
 
@@ -107,6 +105,16 @@ function NewInvoice(props) {
     checked: {},
     track: {},
   })(Switch);
+
+  useEffect(() => {
+    if (!props.metamaskConnected) {
+      setErrorMessages({});
+      let errors = {};
+      errors.metamask =
+        "MetaMask is unavailable. A MetaMask connection with the Rinkeby Test Network is required to use this application.";
+      setErrorMessages(errors);
+    }
+  }, [props.metamaskConnected]);
 
   const cooperativeSelectHandler = (e) => {
     //Reset the errors.
@@ -480,10 +488,13 @@ function NewInvoice(props) {
       }
     } catch (error) {
       setLoading(false);
+      console.log("EXCEPTION ERROR - New invoice (onSubmit): " + error.message);
       setErrorMessages({});
       errors.general =
-        "EXCEPTION ERROR - New invoice (onSubmit): " + error.message;
-      generalErrorRef.current.focus();
+        "METAMASK EXCEPTION ERROR" +
+        error.message +
+        " Remember that a metaMask connection with the Rinkeby Test Network is required to use this application.";
+      generalDivRef.current.focus();
       setErrorMessages(errors);
     }
   };
@@ -491,7 +502,6 @@ function NewInvoice(props) {
   const saveInvoiceOKDialogHandler = async () => {
     //The new invoice can be stored in the Blockchain.
     setSaveBlockchain(false);
-    setConnectionErrorMessage("");
     setErrorMessages({});
     setSuccessNewInvoice(false);
     setLoading(true);
@@ -582,13 +592,17 @@ function NewInvoice(props) {
 
           setLoading(false);
           setSuccessNewInvoice(true);
-          generalErrorRef.current.focus();
+          generalDivRef.current.focus();
         }
       } else {
         console.log("New invoice - MetaMask is unavailable.");
         setLoading(false);
         setSuccessNewInvoice(false);
-        setConnectionErrorMessage("MetaMask is unavailable.");
+        setErrorMessages({});
+        errors.general =
+          "MetaMask is unavailable. A MetaMask connection with the Rinkeby Test Network is required to use this application.";
+        generalDivRef.current.focus();
+        setErrorMessages(errors);
       }
     } catch (error) {
       setLoading(false);
@@ -596,7 +610,13 @@ function NewInvoice(props) {
         "EXCEPTION ERROR - New invoice MetaMask Error (saveInvoiceOKDialogHandler): " +
           error.message
       );
-      setConnectionErrorMessage("EXCEPTION ERROR: " + error.message);
+      setErrorMessages({});
+      errors.general =
+        "EXCEPTION ERROR: " +
+        error.message +
+        " Remember that a metaMask connection with the Rinkeby Test Network is required to use this application.";
+      generalDivRef.current.focus();
+      setErrorMessages(errors);
     }
   };
 
@@ -624,15 +644,10 @@ function NewInvoice(props) {
   };
 
   const saveInvoiceCancelDialogHandler = () => {
+    console.log("The invoice will not be stored in the blockchain.");
     setSaveBlockchain(false);
-    setConnectionErrorMessage("");
     setErrorMessages({});
     setSuccessNewInvoice(false);
-    console.log("The invoice will not be stored in the blockchain.");
-  };
-
-  const metamaskConnectionDialogHandler = () => {
-    setConnectionErrorMessage("");
   };
 
   const addInvoiceButtonHandler = () => {
@@ -660,478 +675,489 @@ function NewInvoice(props) {
       <Typography variant="h5" className={styles.title} noWrap>
         Add a new invoice
       </Typography>
-      <form className={styles.newInvoice} onSubmit={onSubmit}>
-        <Typography variant="h6" className={styles.title} noWrap>
-          Invoice details
-        </Typography>
-        <br />
-        <div className={styles.divForm}>
-          <FormControlLabel
-            control={
-              <GreenSwitch
-                id="swithPaid"
-                checked={paidInvoice}
-                onChange={paidInvoiceHandler}
-                name="checkedPaidInvoice"
-              />
-            }
-            label="Paid"
-          />
-        </div>
-        <div className={styles.divForm}>
-          <FormControl
-            variant="outlined"
-            style={{ width: "40%", marginRight: "50px" }}
-            error={!!errorMessages.docNumber}
-          >
-            <InputLabel htmlFor="inputInvoiceId">Invoice</InputLabel>
-            <OutlinedInput
-              id="inputInvoiceId"
-              labelWidth={50}
-              placeholder="Invoice document number"
-              error={!!errorMessages.docNumber}
-              value={docNumber}
-              onChange={docNumberHandler}
-              onKeyPress={(e) => {
-                e.key === "Enter" && e.preventDefault();
-              }}
-              inputRef={inputDocNumberRef}
-            />
-            {!!errorMessages.docNumber ? (
-              <FormHelperText id="docNumberErrorMessage">
-                {errorMessages.docNumber}
-              </FormHelperText>
-            ) : null}
-          </FormControl>
-        </div>
-        <div className={styles.divForm}>
-          <TextField
-            id="txtInvoiceDate"
-            label="Invoice date"
-            type="date"
-            format=""
-            InputLabelProps={{
-              shrink: true,
-            }}
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-            width="20ch"
-            error={!!errorMessages.invoiceDate}
-            helperText={errorMessages.invoiceDate}
-            value={invoiceDate}
-            onChange={invoiceDateHandler}
-            onKeyPress={(e) => {
-              e.key === "Enter" && e.preventDefault();
-            }}
-            inputRef={inputInvoiceDateRef}
-          />
-          <TextField
-            id="txtDueDate"
-            label="Due date"
-            type="date"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            variant="outlined"
-            width="20ch"
-            error={!!errorMessages.dueDate}
-            helperText={errorMessages.dueDate}
-            value={dueDate}
-            onChange={dueDateHandler}
-            onKeyPress={(e) => {
-              e.key === "Enter" && e.preventDefault();
-            }}
-            inputRef={inputDueDateRef}
-          />{" "}
-        </div>
-        <div className={styles.divForm}>
-          <FormControl
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-            error={!!errorMessages.vatBase}
-          >
-            <InputLabel htmlFor="inputVatBase">VAT base</InputLabel>
-            <OutlinedInput
-              id="inputVatBase"
-              placeholder="0.00"
-              startAdornment={
-                <InputAdornment position="start">€</InputAdornment>
+      {!!errorMessages.metamask ? (
+        <Alert variant="filled" severity="error" style={{ marginTop: "50px" }}>
+          {errorMessages.metamask}
+        </Alert>
+      ) : (
+        <form className={styles.newInvoice} onSubmit={onSubmit}>
+          <Typography variant="h6" className={styles.title} noWrap>
+            Invoice details
+          </Typography>
+          <br />
+          <div className={styles.divForm}>
+            <FormControlLabel
+              control={
+                <GreenSwitch
+                  id="swithPaid"
+                  checked={paidInvoice}
+                  onChange={paidInvoiceHandler}
+                  name="checkedPaidInvoice"
+                />
               }
-              labelWidth={70}
-              onKeyPress={(e) => {
-                e.key === "Enter" && e.preventDefault();
-              }}
-              value={vatBase}
-              onChange={vatBaseHandler}
-              onBlur={vatBaseValidationHandler}
-              error={!!errorMessages.vatBase}
-              inputRef={inputVatBaseRef}
+              label="Paid"
             />
-            {!!errorMessages.vatBase ? (
-              <FormHelperText id="vatBaseErrorMessage">
-                {errorMessages.vatBase}
-              </FormHelperText>
-            ) : null}
-          </FormControl>
-          <FormControl
-            variant="outlined"
-            style={{ marginRight: "15px", width: "15%" }}
-            error={!!errorMessages.vatPercentage}
-          >
-            <InputLabel htmlFor="inputVatPercentage">VAT percentage</InputLabel>
-            <OutlinedInput
-              id="inputVatPercentage"
-              placeholder="0.00"
-              startAdornment={
-                <InputAdornment position="start">%</InputAdornment>
-              }
-              labelWidth={115}
-              onKeyPress={(e) => {
-                e.key === "Enter" && e.preventDefault();
-              }}
-              value={vatPercentage}
-              onChange={vatPercentageHandler}
-              onBlur={vatPercentageValidationHandler}
-              error={!!errorMessages.vatPercentage}
-              inputRef={inputVatPercentageRef}
-            />
-            {!!errorMessages.vatPercentage ? (
-              <FormHelperText id="vatPercentageErrorMessage">
-                {errorMessages.vatPercentage}
-              </FormHelperText>
-            ) : null}
-          </FormControl>
-          <FormControl
-            variant="outlined"
-            style={{ backgroundColor: "#E9EDF6" }}
-          >
-            <InputLabel htmlFor="inputVatTotal">VAT total</InputLabel>
-            <OutlinedInput
-              id="inputVatTotal"
-              startAdornment={
-                <InputAdornment position="start">€</InputAdornment>
-              }
-              labelWidth={70}
-              readOnly
-              disabled
-              value={vatTotal}
-            />
-          </FormControl>
-        </div>
-        <div className={styles.divForm}>
-          <FormControl
-            variant="outlined"
-            style={{ marginRight: "15px", backgroundColor: "#E9EDF6" }}
-          >
-            <InputLabel htmlFor="inputTotalAmountEUR">
-              EUR Total amount
-            </InputLabel>
-            <OutlinedInput
-              id="inputTotalAmountEUR"
-              startAdornment={
-                <InputAdornment position="start">€</InputAdornment>
-              }
-              labelWidth={130}
-              readOnly
-              disabled
-              value={eurTotalAmount}
-            />
-          </FormControl>
-          <FormControl
-            variant="outlined"
-            style={{ marginRight: "15px", width: "15%" }}
-            error={!!errorMessages.usdExchangeRate}
-          >
-            <InputLabel htmlFor="inputUsdExchangeRate">
-              USD Exchange rate
-            </InputLabel>
-            <OutlinedInput
-              id="inputUsdExchangeRate"
-              placeholder="0.000000"
-              startAdornment={
-                <InputAdornment position="start">#</InputAdornment>
-              }
-              labelWidth={145}
-              onKeyPress={(e) => {
-                e.key === "Enter" && e.preventDefault();
-              }}
-              value={usdExchangeRate}
-              onChange={usdExchangeRateHandler}
-              onBlur={usdExchangeRateValidationHandler}
-              error={!!errorMessages.usdExchangeRate}
-              inputRef={inputUsdExchangeRateRef}
-            />
-            {!!errorMessages.usdExchangeRate ? (
-              <FormHelperText id="usdExchangeRateErrorMessage">
-                {errorMessages.usdExchangeRate}
-              </FormHelperText>
-            ) : null}
-          </FormControl>
-          <FormControl
-            variant="outlined"
-            style={{ backgroundColor: "#E9EDF6" }}
-          >
-            <InputLabel htmlFor="inputTotalAmountUSD">
-              USD Total amount
-            </InputLabel>
-            <OutlinedInput
-              id="inputTotalAmountUSD"
-              startAdornment={
-                <InputAdornment position="start">$</InputAdornment>
-              }
-              labelWidth={130}
-              readOnly
-              disabled
-              value={usdTotalAmount}
-            />
-          </FormControl>
-        </div>
-        <div className={styles.divForm}>
-          <TextField
-            id="selectCategory"
-            select
-            label="Category"
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-            value={currentCategory}
-            onChange={categorySelectHandler}
-            error={!!errorMessages.category}
-            helperText={errorMessages.category}
-            inputRef={inputCategoryRef}
-          >
-            <MenuItem key="category00" value="category00">
-              Select a category...
-            </MenuItem>
-            {occupationCategories.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            id="selectOccupation"
-            select
-            label="Occupation"
-            variant="outlined"
-            value={currentOccupation}
-            onChange={occupationSelectHandler}
-            disabled={currentCategory === "category00"}
-            error={!!errorMessages.occupations}
-            helperText={errorMessages.occupations}
-            inputRef={inputOccupationRef}
-          >
-            <MenuItem key="occupation00" value="occupation00">
-              Select an occupation...
-            </MenuItem>
-            {occupations.map((option) =>
-              option.category === currentCategory ? (
-                <MenuItem
-                  key={option.id}
-                  value={option.id}
-                  data-name={option.name}
-                >
-                  {option.name}
-                </MenuItem>
-              ) : null
-            )}
-          </TextField>
-        </div>
-        <div>
-          <InvoiceOccupations
-            occupations={selectedOccupations}
-            clicked={deleteMemberOccupationHandler}
-            canDelete={true}
-          />
-        </div>
-        <br />
-        <Divider />
-        <Typography variant="h6" className={styles.title} noWrap>
-          Member details
-        </Typography>
-        <br />
-        <div className={styles.divForm}>
-          <FormControl
-            variant="outlined"
-            style={{ width: "15%", marginRight: "15px" }}
-            error={!!errorMessages.age}
-          >
-            <InputLabel htmlFor="inputAge">Age</InputLabel>
-            <OutlinedInput
-              id="inputAge"
-              labelWidth={30}
-              error={!!errorMessages.age}
-              value={age}
-              onChange={ageHandler}
-              onKeyPress={(e) => {
-                e.key === "Enter" && e.preventDefault();
-              }}
-              inputProps={{
-                type: "number",
-                min: 18,
-                max: 99,
-              }}
-              inputRef={inputAgeRef}
-            />
-            {!!errorMessages.age ? (
-              <FormHelperText id="ageErrorMessage">
-                {errorMessages.age}
-              </FormHelperText>
-            ) : null}
-          </FormControl>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Gender</FormLabel>
-            <RadioGroup
-              aria-label="gender"
-              name="memberGender"
-              value={gender}
-              onChange={genderHandler}
-              row
-            >
-              <FormControlLabel
-                value="female"
-                control={<Radio style={{ color: "#aa4994" }} />}
-                label="Female"
-              />
-              <FormControlLabel
-                value="male"
-                control={<Radio style={{ color: "#aa4994" }} />}
-                label="Male"
-              />
-              <FormControlLabel
-                value="other"
-                control={<Radio style={{ color: "#aa4994" }} />}
-                label="Other"
-              />
-            </RadioGroup>
-          </FormControl>{" "}
-        </div>
-        <div className={styles.divForm}>
-          <TextField
-            id="selectCooperative"
-            select
-            label="Cooperative"
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-            value={currentCooperative}
-            onChange={cooperativeSelectHandler}
-            error={!!errorMessages.cooperative}
-            helperText={errorMessages.cooperative}
-            inputRef={inputCooperativeRef}
-          >
-            <MenuItem key="cooperative00" value="cooperative00">
-              Select a cooperative...
-            </MenuItem>
-            {cooperatives.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            id="selectCountry"
-            select
-            label="Country"
-            variant="outlined"
-            style={{ marginRight: "15px" }}
-            value={currentCountry}
-            onChange={countrySelectHandler}
-            disabled={currentCooperative === "cooperative00"}
-            error={!!errorMessages.country}
-            helperText={errorMessages.country}
-            inputRef={inputCountryRef}
-          >
-            <MenuItem key="country00" value="country00">
-              Select a country...
-            </MenuItem>
-            {countries.map((option) =>
-              selectedCountries.includes(option.id) ? (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.name}
-                </MenuItem>
-              ) : null
-            )}
-          </TextField>
-          <TextField
-            id="selectOffice"
-            select
-            label="Office"
-            variant="outlined"
-            disabled={
-              currentCooperative === "cooperative00" ||
-              currentCountry === "country00"
-            }
-            value={currentOffice}
-            onChange={officeSelectHandler}
-            error={!!errorMessages.office}
-            helperText={errorMessages.office}
-            inputRef={inputOfficeRef}
-          >
-            <MenuItem key="office00" value="office00">
-              Select an office...
-            </MenuItem>
-            {offices.map((option) =>
-              option.cooperative === currentCooperative &&
-              option.country === currentCountry ? (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.name}
-                </MenuItem>
-              ) : null
-            )}
-          </TextField>
-        </div>
-        {!!errorMessages.general ? (
-          <Alert variant="filled" severity="error">
-            {errorMessages.general}
-          </Alert>
-        ) : null}
-        {successNewInvoice ? (
-          <div style={{ marginTop: "20px" }}>
-            <Alert
-              severity="success"
-              variant="filled"
-              action={
-                <Tooltip title="Close if you want to add a new invoice." arrow>
-                  <IconButton
-                    aria-label="close"
-                    color="inherit"
-                    size="small"
-                    onClick={() => {
-                      setSuccessNewInvoice(false);
-                      resetNewInvoiceFormFields();
-                      inputDocNumberRef.current.focus();
-                    }}
-                  >
-                    <CloseIcon fontSize="inherit" />
-                  </IconButton>
-                </Tooltip>
-              }
-            >
-              The invoice has beed added successfully!
-            </Alert>
           </div>
-        ) : null}
-        <div
-          className={styles.divButtonForm}
-          ref={generalErrorRef}
-          tabIndex={-1}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={loading ? null : <SaveIcon />}
-            type="submit"
-            disabled={loading || successNewInvoice}
+          <div className={styles.divForm}>
+            <FormControl
+              variant="outlined"
+              style={{ width: "40%", marginRight: "50px" }}
+              error={!!errorMessages.docNumber}
+            >
+              <InputLabel htmlFor="inputInvoiceId">Invoice</InputLabel>
+              <OutlinedInput
+                id="inputInvoiceId"
+                labelWidth={50}
+                placeholder="Invoice document number"
+                error={!!errorMessages.docNumber}
+                value={docNumber}
+                onChange={docNumberHandler}
+                onKeyPress={(e) => {
+                  e.key === "Enter" && e.preventDefault();
+                }}
+                inputRef={inputDocNumberRef}
+              />
+              {!!errorMessages.docNumber ? (
+                <FormHelperText id="docNumberErrorMessage">
+                  {errorMessages.docNumber}
+                </FormHelperText>
+              ) : null}
+            </FormControl>
+          </div>
+          <div className={styles.divForm}>
+            <TextField
+              id="txtInvoiceDate"
+              label="Invoice date"
+              type="date"
+              format=""
+              InputLabelProps={{
+                shrink: true,
+              }}
+              variant="outlined"
+              style={{ marginRight: "15px" }}
+              width="20ch"
+              error={!!errorMessages.invoiceDate}
+              helperText={errorMessages.invoiceDate}
+              value={invoiceDate}
+              onChange={invoiceDateHandler}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
+              inputRef={inputInvoiceDateRef}
+            />
+            <TextField
+              id="txtDueDate"
+              label="Due date"
+              type="date"
+              InputLabelProps={{
+                shrink: true,
+              }}
+              variant="outlined"
+              width="20ch"
+              error={!!errorMessages.dueDate}
+              helperText={errorMessages.dueDate}
+              value={dueDate}
+              onChange={dueDateHandler}
+              onKeyPress={(e) => {
+                e.key === "Enter" && e.preventDefault();
+              }}
+              inputRef={inputDueDateRef}
+            />{" "}
+          </div>
+          <div className={styles.divForm}>
+            <FormControl
+              variant="outlined"
+              style={{ marginRight: "15px" }}
+              error={!!errorMessages.vatBase}
+            >
+              <InputLabel htmlFor="inputVatBase">VAT base</InputLabel>
+              <OutlinedInput
+                id="inputVatBase"
+                placeholder="0.00"
+                startAdornment={
+                  <InputAdornment position="start">€</InputAdornment>
+                }
+                labelWidth={70}
+                onKeyPress={(e) => {
+                  e.key === "Enter" && e.preventDefault();
+                }}
+                value={vatBase}
+                onChange={vatBaseHandler}
+                onBlur={vatBaseValidationHandler}
+                error={!!errorMessages.vatBase}
+                inputRef={inputVatBaseRef}
+              />
+              {!!errorMessages.vatBase ? (
+                <FormHelperText id="vatBaseErrorMessage">
+                  {errorMessages.vatBase}
+                </FormHelperText>
+              ) : null}
+            </FormControl>
+            <FormControl
+              variant="outlined"
+              style={{ marginRight: "15px", width: "15%" }}
+              error={!!errorMessages.vatPercentage}
+            >
+              <InputLabel htmlFor="inputVatPercentage">
+                VAT percentage
+              </InputLabel>
+              <OutlinedInput
+                id="inputVatPercentage"
+                placeholder="0.00"
+                startAdornment={
+                  <InputAdornment position="start">%</InputAdornment>
+                }
+                labelWidth={115}
+                onKeyPress={(e) => {
+                  e.key === "Enter" && e.preventDefault();
+                }}
+                value={vatPercentage}
+                onChange={vatPercentageHandler}
+                onBlur={vatPercentageValidationHandler}
+                error={!!errorMessages.vatPercentage}
+                inputRef={inputVatPercentageRef}
+              />
+              {!!errorMessages.vatPercentage ? (
+                <FormHelperText id="vatPercentageErrorMessage">
+                  {errorMessages.vatPercentage}
+                </FormHelperText>
+              ) : null}
+            </FormControl>
+            <FormControl
+              variant="outlined"
+              style={{ backgroundColor: "#E9EDF6" }}
+            >
+              <InputLabel htmlFor="inputVatTotal">VAT total</InputLabel>
+              <OutlinedInput
+                id="inputVatTotal"
+                startAdornment={
+                  <InputAdornment position="start">€</InputAdornment>
+                }
+                labelWidth={70}
+                readOnly
+                disabled
+                value={vatTotal}
+              />
+            </FormControl>
+          </div>
+          <div className={styles.divForm}>
+            <FormControl
+              variant="outlined"
+              style={{ marginRight: "15px", backgroundColor: "#E9EDF6" }}
+            >
+              <InputLabel htmlFor="inputTotalAmountEUR">
+                EUR Total amount
+              </InputLabel>
+              <OutlinedInput
+                id="inputTotalAmountEUR"
+                startAdornment={
+                  <InputAdornment position="start">€</InputAdornment>
+                }
+                labelWidth={130}
+                readOnly
+                disabled
+                value={eurTotalAmount}
+              />
+            </FormControl>
+            <FormControl
+              variant="outlined"
+              style={{ marginRight: "15px", width: "15%" }}
+              error={!!errorMessages.usdExchangeRate}
+            >
+              <InputLabel htmlFor="inputUsdExchangeRate">
+                USD Exchange rate
+              </InputLabel>
+              <OutlinedInput
+                id="inputUsdExchangeRate"
+                placeholder="0.000000"
+                startAdornment={
+                  <InputAdornment position="start">#</InputAdornment>
+                }
+                labelWidth={145}
+                onKeyPress={(e) => {
+                  e.key === "Enter" && e.preventDefault();
+                }}
+                value={usdExchangeRate}
+                onChange={usdExchangeRateHandler}
+                onBlur={usdExchangeRateValidationHandler}
+                error={!!errorMessages.usdExchangeRate}
+                inputRef={inputUsdExchangeRateRef}
+              />
+              {!!errorMessages.usdExchangeRate ? (
+                <FormHelperText id="usdExchangeRateErrorMessage">
+                  {errorMessages.usdExchangeRate}
+                </FormHelperText>
+              ) : null}
+            </FormControl>
+            <FormControl
+              variant="outlined"
+              style={{ backgroundColor: "#E9EDF6" }}
+            >
+              <InputLabel htmlFor="inputTotalAmountUSD">
+                USD Total amount
+              </InputLabel>
+              <OutlinedInput
+                id="inputTotalAmountUSD"
+                startAdornment={
+                  <InputAdornment position="start">$</InputAdornment>
+                }
+                labelWidth={130}
+                readOnly
+                disabled
+                value={usdTotalAmount}
+              />
+            </FormControl>
+          </div>
+          <div className={styles.divForm}>
+            <TextField
+              id="selectCategory"
+              select
+              label="Category"
+              variant="outlined"
+              style={{ marginRight: "15px" }}
+              value={currentCategory}
+              onChange={categorySelectHandler}
+              error={!!errorMessages.category}
+              helperText={errorMessages.category}
+              inputRef={inputCategoryRef}
+            >
+              <MenuItem key="category00" value="category00">
+                Select a category...
+              </MenuItem>
+              {occupationCategories.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              id="selectOccupation"
+              select
+              label="Occupation"
+              variant="outlined"
+              value={currentOccupation}
+              onChange={occupationSelectHandler}
+              disabled={currentCategory === "category00"}
+              error={!!errorMessages.occupations}
+              helperText={errorMessages.occupations}
+              inputRef={inputOccupationRef}
+            >
+              <MenuItem key="occupation00" value="occupation00">
+                Select an occupation...
+              </MenuItem>
+              {occupations.map((option) =>
+                option.category === currentCategory ? (
+                  <MenuItem
+                    key={option.id}
+                    value={option.id}
+                    data-name={option.name}
+                  >
+                    {option.name}
+                  </MenuItem>
+                ) : null
+              )}
+            </TextField>
+          </div>
+          <div>
+            <InvoiceOccupations
+              occupations={selectedOccupations}
+              clicked={deleteMemberOccupationHandler}
+              canDelete={true}
+            />
+          </div>
+          <br />
+          <Divider />
+          <Typography variant="h6" className={styles.title} noWrap>
+            Member details
+          </Typography>
+          <br />
+          <div className={styles.divForm}>
+            <FormControl
+              variant="outlined"
+              style={{ width: "15%", marginRight: "15px" }}
+              error={!!errorMessages.age}
+            >
+              <InputLabel htmlFor="inputAge">Age</InputLabel>
+              <OutlinedInput
+                id="inputAge"
+                labelWidth={30}
+                error={!!errorMessages.age}
+                value={age}
+                onChange={ageHandler}
+                onKeyPress={(e) => {
+                  e.key === "Enter" && e.preventDefault();
+                }}
+                inputProps={{
+                  type: "number",
+                  min: 18,
+                  max: 99,
+                }}
+                inputRef={inputAgeRef}
+              />
+              {!!errorMessages.age ? (
+                <FormHelperText id="ageErrorMessage">
+                  {errorMessages.age}
+                </FormHelperText>
+              ) : null}
+            </FormControl>
+            <FormControl component="fieldset">
+              <FormLabel component="legend">Gender</FormLabel>
+              <RadioGroup
+                aria-label="gender"
+                name="memberGender"
+                value={gender}
+                onChange={genderHandler}
+                row
+              >
+                <FormControlLabel
+                  value="female"
+                  control={<Radio style={{ color: "#aa4994" }} />}
+                  label="Female"
+                />
+                <FormControlLabel
+                  value="male"
+                  control={<Radio style={{ color: "#aa4994" }} />}
+                  label="Male"
+                />
+                <FormControlLabel
+                  value="other"
+                  control={<Radio style={{ color: "#aa4994" }} />}
+                  label="Other"
+                />
+              </RadioGroup>
+            </FormControl>{" "}
+          </div>
+          <div className={styles.divForm}>
+            <TextField
+              id="selectCooperative"
+              select
+              label="Cooperative"
+              variant="outlined"
+              style={{ marginRight: "15px" }}
+              value={currentCooperative}
+              onChange={cooperativeSelectHandler}
+              error={!!errorMessages.cooperative}
+              helperText={errorMessages.cooperative}
+              inputRef={inputCooperativeRef}
+            >
+              <MenuItem key="cooperative00" value="cooperative00">
+                Select a cooperative...
+              </MenuItem>
+              {cooperatives.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              id="selectCountry"
+              select
+              label="Country"
+              variant="outlined"
+              style={{ marginRight: "15px" }}
+              value={currentCountry}
+              onChange={countrySelectHandler}
+              disabled={currentCooperative === "cooperative00"}
+              error={!!errorMessages.country}
+              helperText={errorMessages.country}
+              inputRef={inputCountryRef}
+            >
+              <MenuItem key="country00" value="country00">
+                Select a country...
+              </MenuItem>
+              {countries.map((option) =>
+                selectedCountries.includes(option.id) ? (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ) : null
+              )}
+            </TextField>
+            <TextField
+              id="selectOffice"
+              select
+              label="Office"
+              variant="outlined"
+              disabled={
+                currentCooperative === "cooperative00" ||
+                currentCountry === "country00"
+              }
+              value={currentOffice}
+              onChange={officeSelectHandler}
+              error={!!errorMessages.office}
+              helperText={errorMessages.office}
+              inputRef={inputOfficeRef}
+            >
+              <MenuItem key="office00" value="office00">
+                Select an office...
+              </MenuItem>
+              {offices.map((option) =>
+                option.cooperative === currentCooperative &&
+                option.country === currentCountry ? (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ) : null
+              )}
+            </TextField>
+          </div>
+          {!!errorMessages.general ? (
+            <Alert variant="filled" severity="error">
+              {errorMessages.general}
+            </Alert>
+          ) : null}
+          {successNewInvoice ? (
+            <div style={{ marginTop: "20px" }}>
+              <Alert
+                severity="success"
+                variant="filled"
+                action={
+                  <Tooltip
+                    title="Close if you want to add a new invoice."
+                    arrow
+                  >
+                    <IconButton
+                      aria-label="close"
+                      color="inherit"
+                      size="small"
+                      onClick={() => {
+                        setSuccessNewInvoice(false);
+                        resetNewInvoiceFormFields();
+                        inputDocNumberRef.current.focus();
+                      }}
+                    >
+                      <CloseIcon fontSize="inherit" />
+                    </IconButton>
+                  </Tooltip>
+                }
+              >
+                The invoice has beed added successfully!
+              </Alert>
+            </div>
+          ) : null}
+          <div
+            className={styles.divButtonForm}
+            ref={generalDivRef}
+            tabIndex={-1}
           >
-            {loading ? (
-              <CircularProgress style={{ color: "white" }} size="30px" />
-            ) : (
-              "Save"
-            )}
-          </Button>
-        </div>
-        <div className={styles.spacer}> </div>
-      </form>{" "}
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={loading ? null : <SaveIcon />}
+              type="submit"
+              disabled={loading || successNewInvoice}
+            >
+              {loading ? (
+                <CircularProgress style={{ color: "white" }} size="30px" />
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </div>
+          <div className={styles.spacer}> </div>
+        </form>
+      )}
       {saveBlockchain ? (
         <ConfirmDialog
           confirmPrimaryDialogHandler={saveInvoiceOKDialogHandler}
@@ -1140,12 +1166,6 @@ function NewInvoice(props) {
           dialogDescription="The invoice will be stored in the Ethereum's Rinkeby Test Network."
           primaryButton="Save"
           secondaryButton="Cancel"
-        />
-      ) : null}
-      {!!connectionErrorMessage ? (
-        <MetaMaskConnectionDialog
-          metamaskConnDialogHandler={metamaskConnectionDialogHandler}
-          errorMessage={connectionErrorMessage}
         />
       ) : null}
     </>

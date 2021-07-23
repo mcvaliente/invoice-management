@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { getWeb3 } from "../../utils/web3";
 import invoice from "../../contracts/invoice";
 import { useParams, NavLink } from "react-router-dom";
-import MetaMaskConnectionDialog from "../wallet/MetaMaskConnectionDialog";
 import {
   cooperatives,
   countries,
@@ -22,7 +21,6 @@ import {
   RadioGroup,
   FormLabel,
   MenuItem,
-  Switch,
   Fab,
   Tooltip,
   IconButton,
@@ -31,37 +29,19 @@ import {
 import styles from "../../assets/css/InvoiceInfo.module.css";
 import { Loader } from "../../utils/Loader";
 import InvoiceOccupations from "./InvoiceOccupations";
-import { withStyles } from "@material-ui/core/styles";
-import { green } from "@material-ui/core/colors";
 import AddIcon from "@material-ui/icons/Add";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import Alert from "@material-ui/lab/Alert";
 import InvoiceSearchBar from "./InvoiceSearchBar";
 import AlertDialog from "../shared/AlertDialog";
-import {
-  getPercentageAmount,
-  isUnpaidInvoice,
-} from "../../utils/InvoiceFieldsValidation";
-
-const GreenSwitch = withStyles({
-  switchBase: {
-    color: "#aa4994",
-    "&$checked": {
-      color: green[700],
-    },
-    "&$checked + $track": {
-      backgroundColor: green[700],
-    },
-  },
-  checked: {},
-  track: {},
-})(Switch);
+import { getPercentageAmount } from "../../utils/InvoiceFieldsValidation";
 
 //Using Hooks.
 export default function InvoiceInfo(props) {
   const { id } = useParams();
 
   const [paidInvoice, setPaidInvoice] = useState(false);
-  const [docNumber, setDocNumber] = useState(id);
+  const [docNumber, setDocNumber] = useState(id.toUpperCase());
   const [invoiceDate, setInvoiceDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [vatBase, setVatBase] = useState("");
@@ -79,9 +59,8 @@ export default function InvoiceInfo(props) {
   const [currentOffice, setCurrentOffice] = useState("office00");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
+  const [errorMetaMaskMessage, setErrorMetaMaskMessage] = useState("");
   const [validInvoice, setValidInvoice] = useState(false);
-  const [unpaidInvoice, setUnpaidInvoice] = useState(false);
 
   useEffect(() => {
     async function getInvoiceInfo() {
@@ -91,9 +70,7 @@ export default function InvoiceInfo(props) {
         console.log("Parameter id: ", docNumber);
         if (props.metamaskConnected) {
           //Check if the invoice is stored in the blockchain.
-          const bytes32InvoiceId = web3.utils.fromAscii(
-            docNumber.toUpperCase()
-          );
+          const bytes32InvoiceId = web3.utils.fromAscii(docNumber);
           const existingInvoice = await invoice.methods
             .invoiceExists(bytes32InvoiceId)
             .call();
@@ -129,10 +106,14 @@ export default function InvoiceInfo(props) {
                 docNumber +
                 "' cannot be found. Please enter a new invoice document number."
             );
+            setValidInvoice(false);
           }
           setLoading(false);
         } else {
           console.log("Invoice Info - MetaMask is unavailable.");
+          setErrorMetaMaskMessage(
+            "MetaMask is unavailable. A MetaMask connection with the Rinkeby Test Network is required to use this application."
+          );
           setLoading(false);
         }
       } catch (error) {
@@ -141,16 +122,16 @@ export default function InvoiceInfo(props) {
           "EXCEPTION ERROR - Invoice info MetaMask Error (useEffect): " +
             error.message
         );
-        setConnectionErrorMessage("EXCEPTION ERROR: " + error.message);
+        setErrorMetaMaskMessage(
+          "EXCEPTION ERROR: " +
+            error.message +
+            " Remember that a metaMask connection with the Rinkeby Test Network is required to use this application."
+        );
       }
     }
 
     getInvoiceInfo();
   }, [props.metamaskConnected, docNumber]);
-
-  const metamaskConnectionDialogHandler = () => {
-    setConnectionErrorMessage("");
-  };
 
   const invoiceIdSearchHandler = (invoiceValue) => {
     setDocNumber(invoiceValue);
@@ -167,15 +148,7 @@ export default function InvoiceInfo(props) {
     console.log("Json parse: ", jsonOutput);
     setPaidInvoice(jsonOutput["0"]);
     setInvoiceDate(web3.utils.toAscii(jsonOutput["1"]).replace(/\u0000/g, ""));
-    const dueDateField = web3.utils
-      .toAscii(jsonOutput["2"])
-      .replace(/\u0000/g, "");
-    setDueDate(dueDateField);
-    const dDueDateField = new Date(dueDateField);
-    const unsuccessfulInvoice = isUnpaidInvoice(dDueDateField);
-    if (unsuccessfulInvoice) {
-      setUnpaidInvoice(true);
-    }
+    setDueDate(web3.utils.toAscii(jsonOutput["2"]).replace(/\u0000/g, ""));
     setGender(web3.utils.toAscii(jsonOutput["3"]).replace(/\u0000/g, ""));
     setAge(jsonOutput["4"]);
   }
@@ -297,27 +270,51 @@ export default function InvoiceInfo(props) {
           invoiceValueHandler={invoiceIdSearchHandler}
         />
       </div>
+      {!!errorMetaMaskMessage ? (
+        <Alert variant="filled" severity="error">
+          {errorMetaMaskMessage}
+        </Alert>
+      ) : null}
       {validInvoice ? (
         <form className={styles.invoiceInfo}>
           <Typography variant="h6" className={styles.title} noWrap>
-            Invoice details: {docNumber.toUpperCase()}
-            {!paidInvoice && unpaidInvoice ? (
-              <Chip
-                label="UNPAID"
-                style={{ marginLeft: "20px" }}
-                color="secondary"
-              />
-            ) : null}
+            Invoice details
           </Typography>
           <br />
           <div className={styles.divForm}>
-            <FormControlLabel
-              control={
-                <GreenSwitch checked={paidInvoice} name="checkedPaidInvoice" />
-              }
-              readOnly
-              label="Paid"
-            />
+            {paidInvoice ? (
+              <Chip
+                label="PAID"
+                style={{
+                  backgroundColor: "green",
+                  color: "white",
+                }}
+              />
+            ) : (
+              <Chip
+                label="UNPAID"
+                style={{
+                  backgroundColor: "#f50057",
+                  color: "white",
+                }}
+                size="medium"
+              />
+            )}
+          </div>
+          <br />
+          <div className={styles.divForm}>
+            <FormControl
+              variant="outlined"
+              style={{ width: "40%", marginRight: "50px" }}
+            >
+              <InputLabel htmlFor="inputInvoiceId">Invoice</InputLabel>
+              <OutlinedInput
+                id="inputInvoiceId"
+                labelWidth={50}
+                value={docNumber}
+                readOnly
+              />
+            </FormControl>
           </div>
           <div className={styles.divForm}>
             <TextField
@@ -563,12 +560,6 @@ export default function InvoiceInfo(props) {
           </div>
           <div className={styles.spacer}> </div>
         </form>
-      ) : null}
-      {!!connectionErrorMessage ? (
-        <MetaMaskConnectionDialog
-          metamaskConnDialogHandler={metamaskConnectionDialogHandler}
-          errorMessage={connectionErrorMessage}
-        />
       ) : null}
       {!!errorMessage ? (
         <AlertDialog
