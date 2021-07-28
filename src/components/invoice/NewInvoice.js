@@ -47,6 +47,7 @@ import InvoiceOccupations from "./InvoiceOccupations";
 import { getWeb3, getCurrentAccount } from "../../utils/web3";
 import invoice from "../../contracts/invoice";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import { submit } from "../../utils/txs.js";
 
 function NewInvoice(props) {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -75,6 +76,8 @@ function NewInvoice(props) {
   const [loading, setLoading] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const [successNewInvoice, setSuccessNewInvoice] = useState(false);
+  const [metaTxRequest, setMetaTxRequest] = useState(false);
+  const [txHash, setTxHash] = useState("");
 
   const inputDocNumberRef = useRef();
   const inputInvoiceDateRef = useRef();
@@ -125,6 +128,7 @@ function NewInvoice(props) {
         (option) => option.id === e.target.value
       );
       setSelectedCountries(selectedcooperative.countries);
+      setCurrentCountry("country00");
       //console.log("selected countries: ", selectedcooperative.countries);
     }
   };
@@ -133,6 +137,7 @@ function NewInvoice(props) {
     setErrorMessages({});
     if (e.target.value !== "country00") {
       setCurrentCountry(e.target.value);
+      setCurrentOffice("office00");
     }
   };
 
@@ -488,6 +493,7 @@ function NewInvoice(props) {
       }
     } catch (error) {
       setLoading(false);
+      setMetaTxRequest(false);
       console.log("EXCEPTION ERROR - New invoice (onSubmit): " + error.message);
       setErrorMessages({});
       errors.general =
@@ -520,6 +526,7 @@ function NewInvoice(props) {
           setErrorMessages(errors);
           inputDocNumberRef.current.focus();
           setLoading(false);
+          setMetaTxRequest(false);
         } else {
           //Fields to store in the blockchain
           console.log(">>> FIELDS TO STORE IN THE BLOCKCHAIN");
@@ -530,73 +537,18 @@ function NewInvoice(props) {
           console.log("VAT Base: ", vatBase);
           console.log("VAT Percentage: ", vatPercentage);
           console.log("USD Exchange rate: ", usdExchangeRate);
-          //Save only the ids of the occupation(s) associated with the invoice.
-          const occupationIds = selectedOccupations.map((occupation) => {
-            return occupation.id;
-          });
-          console.log("Occupation Ids: ", occupationIds);
           console.log("Age: ", age);
           console.log("Gender: ", gender);
           console.log("Cooperative: ", currentCooperative);
           console.log("Country: ", currentCountry);
           console.log("Office: ", currentOffice);
-
-          //Adapt fields in order to store them in the blockchain
-          const bytes16MemberCooperative =
-            web3.utils.fromAscii(currentCooperative);
-          const bytes16MemberCountry = web3.utils.fromAscii(currentCountry);
-          const bytes16MemberOffice = web3.utils.fromAscii(currentOffice);
-          const bytes16MemberLocation = [
-            bytes16MemberCooperative,
-            bytes16MemberCountry,
-            bytes16MemberOffice,
-          ];
-          const bytes16Invoicedate = web3.utils.fromAscii(invoiceDate);
-          const bytes16DueDate = web3.utils.fromAscii(dueDate);
-          const bytes16InvoiceDates = [bytes16Invoicedate, bytes16DueDate];
-          const bytes16VatBase = web3.utils.fromAscii(vatBase);
-          const bytes16VatPercentage = web3.utils.fromAscii(vatPercentage);
-          const bytes16UsdExchangeRate = web3.utils.fromAscii(usdExchangeRate);
-          const bytes16CostData = [
-            bytes16VatBase,
-            bytes16VatPercentage,
-            bytes16UsdExchangeRate,
-          ];
-          const bytes16Occupations = occupationIds.map((occupation) => {
-            return web3.utils.fromAscii(occupation);
-          });
-          const bytes16Gender = web3.utils.fromAscii(gender);
-          const uint256Age = age;
-          //Get the current account.
-          const currentAccount = getCurrentAccount();
-          console.log("Current account: ", currentAccount);
-          await invoice.methods
-            .createInvoice(
-              paidInvoice,
-              bytes32InvoiceId,
-              bytes16MemberLocation,
-              bytes16InvoiceDates,
-              bytes16CostData,
-              bytes16Occupations,
-              bytes16Gender,
-              uint256Age
-            )
-            .send({
-              from: currentAccount,
-              gas: "2000000",
-            });
-
-          //Checking the blockchain
-          //const totalInvoices = await invoice.methods.getInvoiceCount().call();
-          //console.log("Total invoices: ", totalInvoices);
-
-          setLoading(false);
-          setSuccessNewInvoice(true);
-          generalDivRef.current.focus();
+          //Request if a meta-transaction must be used or not.
+          setMetaTxRequest(true);
         }
       } else {
         console.log("New invoice - MetaMask is unavailable.");
         setLoading(false);
+        setMetaTxRequest(false);
         setSuccessNewInvoice(false);
         setErrorMessages({});
         errors.general =
@@ -606,6 +558,7 @@ function NewInvoice(props) {
       }
     } catch (error) {
       setLoading(false);
+      setMetaTxRequest(false);
       console.error(
         "EXCEPTION ERROR - New invoice MetaMask Error (saveInvoiceOKDialogHandler): " +
           error.message
@@ -615,6 +568,163 @@ function NewInvoice(props) {
         "EXCEPTION ERROR: " +
         error.message +
         " Remember that a metaMask connection with the Rinkeby Test Network is required to use this application.";
+      generalDivRef.current.focus();
+      setErrorMessages(errors);
+    }
+  };
+
+  const saveMetaTxInvoiceDialogHandler = async () => {
+    let errors = {};
+    setErrorMessages({});
+
+    try {
+      //Adapt fields in order to store them in the blockchain
+      //Save only the ids of the occupation(s) associated with the invoice.
+      const occupationIds = selectedOccupations.map((occupation) => {
+        return occupation.id;
+      });
+      console.log("Occupation Ids: ", occupationIds);
+      const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
+      const bytes16MemberCooperative = web3.utils.fromAscii(currentCooperative);
+      const bytes16MemberCountry = web3.utils.fromAscii(currentCountry);
+      const bytes16MemberOffice = web3.utils.fromAscii(currentOffice);
+      const bytes16MemberLocation = [
+        bytes16MemberCooperative,
+        bytes16MemberCountry,
+        bytes16MemberOffice,
+      ];
+      const bytes16Invoicedate = web3.utils.fromAscii(invoiceDate);
+      const bytes16DueDate = web3.utils.fromAscii(dueDate);
+      const bytes16InvoiceDates = [bytes16Invoicedate, bytes16DueDate];
+      const bytes16VatBase = web3.utils.fromAscii(vatBase);
+      const bytes16VatPercentage = web3.utils.fromAscii(vatPercentage);
+      const bytes16UsdExchangeRate = web3.utils.fromAscii(usdExchangeRate);
+      const bytes16CostData = [
+        bytes16VatBase,
+        bytes16VatPercentage,
+        bytes16UsdExchangeRate,
+      ];
+      const bytes16Occupations = occupationIds.map((occupation) => {
+        return web3.utils.fromAscii(occupation);
+      });
+      const bytes16Gender = web3.utils.fromAscii(gender);
+      const uint256Age = age;
+      //Get the current account.
+      const currentAccount = getCurrentAccount();
+      console.log("Current account: ", currentAccount);
+      //META-TX TODO
+      const tx = await submit(
+        paidInvoice,
+        bytes32InvoiceId,
+        bytes16MemberLocation,
+        bytes16InvoiceDates,
+        bytes16CostData,
+        bytes16Occupations,
+        bytes16Gender,
+        uint256Age,
+        web3,
+        currentAccount
+      );
+      setTxHash(tx.hash);
+      console.log("tx result hash: ", txHash);
+      console.log("tx result error: ", tx.error);
+
+      //Checking the blockchain
+      const totalInvoices = await invoice.methods.getInvoiceCount().call();
+      console.log("Total invoices: ", totalInvoices);
+
+      setLoading(false);
+      setMetaTxRequest(false);
+      setSuccessNewInvoice(true);
+      generalDivRef.current.focus();
+    } catch (error) {
+      setLoading(false);
+      setMetaTxRequest(false);
+      console.error(
+        "EXCEPTION ERROR - New invoice MetaMask Error (saveInvoiceOKDialogHandler): " +
+          error.message
+      );
+      setErrorMessages({});
+      errors.general = "EXCEPTION ERROR: " + error.message;
+      generalDivRef.current.focus();
+      setErrorMessages(errors);
+    }
+  };
+
+  const saveInvoiceDialogHandler = async () => {
+    let errors = {};
+    setErrorMessages({});
+
+    try {
+      //Adapt fields in order to store them in the blockchain
+      const bytes32InvoiceId = web3.utils.fromAscii(docNumber.toUpperCase());
+      //Save only the ids of the occupation(s) associated with the invoice.
+      const occupationIds = selectedOccupations.map((occupation) => {
+        return occupation.id;
+      });
+      console.log("Occupation Ids: ", occupationIds);
+      const bytes16MemberCooperative = web3.utils.fromAscii(currentCooperative);
+      const bytes16MemberCountry = web3.utils.fromAscii(currentCountry);
+      const bytes16MemberOffice = web3.utils.fromAscii(currentOffice);
+      const bytes16MemberLocation = [
+        bytes16MemberCooperative,
+        bytes16MemberCountry,
+        bytes16MemberOffice,
+      ];
+      const bytes16Invoicedate = web3.utils.fromAscii(invoiceDate);
+      const bytes16DueDate = web3.utils.fromAscii(dueDate);
+      const bytes16InvoiceDates = [bytes16Invoicedate, bytes16DueDate];
+      const bytes16VatBase = web3.utils.fromAscii(vatBase);
+      const bytes16VatPercentage = web3.utils.fromAscii(vatPercentage);
+      const bytes16UsdExchangeRate = web3.utils.fromAscii(usdExchangeRate);
+      const bytes16CostData = [
+        bytes16VatBase,
+        bytes16VatPercentage,
+        bytes16UsdExchangeRate,
+      ];
+      const bytes16Occupations = occupationIds.map((occupation) => {
+        return web3.utils.fromAscii(occupation);
+      });
+      const bytes16Gender = web3.utils.fromAscii(gender);
+      const uint256Age = age;
+      //Get the current account.
+      const currentAccount = getCurrentAccount();
+      console.log("Current account: ", currentAccount);
+      //Now we check if the user wants to use a Meta-transaction or not.
+
+      await invoice.methods
+        .createInvoice(
+          paidInvoice,
+          bytes32InvoiceId,
+          bytes16MemberLocation,
+          bytes16InvoiceDates,
+          bytes16CostData,
+          bytes16Occupations,
+          bytes16Gender,
+          uint256Age
+        )
+        .send({
+          from: currentAccount,
+          gas: "2000000",
+        });
+
+      //Checking the blockchain
+      //const totalInvoices = await invoice.methods.getInvoiceCount().call();
+      //console.log("Total invoices: ", totalInvoices);
+
+      setLoading(false);
+      setSuccessNewInvoice(true);
+      setMetaTxRequest(false);
+      generalDivRef.current.focus();
+    } catch (error) {
+      setLoading(false);
+      setMetaTxRequest(false);
+      console.error(
+        "EXCEPTION ERROR - New invoice MetaMask Error (saveInvoiceOKDialogHandler): " +
+          error.message
+      );
+      setErrorMessages({});
+      errors.general = "EXCEPTION ERROR: " + error.message;
       generalDivRef.current.focus();
       setErrorMessages(errors);
     }
@@ -652,6 +762,7 @@ function NewInvoice(props) {
 
   const addInvoiceButtonHandler = () => {
     setSuccessNewInvoice(false);
+    setMetaTxRequest(false);
     resetNewInvoiceFormFields();
     inputDocNumberRef.current.focus();
   };
@@ -1122,6 +1233,7 @@ function NewInvoice(props) {
                       size="small"
                       onClick={() => {
                         setSuccessNewInvoice(false);
+                        setMetaTxRequest(false);
                         resetNewInvoiceFormFields();
                         inputDocNumberRef.current.focus();
                       }}
@@ -1166,6 +1278,16 @@ function NewInvoice(props) {
           dialogDescription="The invoice will be stored in the Ethereum's Rinkeby Test Network."
           primaryButton="Save"
           secondaryButton="Cancel"
+        />
+      ) : null}
+      {metaTxRequest ? (
+        <ConfirmDialog
+          confirmPrimaryDialogHandler={saveMetaTxInvoiceDialogHandler}
+          confirmSecondaryDialogHandler={saveInvoiceDialogHandler}
+          dialogTitle="Payment"
+          dialogDescription="Please, select how the transaction that stores a new invoice in the blockchain will be paid."
+          primaryButton="Forwarder"
+          secondaryButton="Me"
         />
       ) : null}
     </>
