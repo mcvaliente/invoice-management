@@ -128,16 +128,11 @@ export async function submit(
 
     if (validSignature) {
       // Send request to the server
-      const responseServer = await fetch(RelayUrl, {
+      response = await fetch(RelayUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...request, signature }),
       }).then((r) => r.json());
-      console.log(
-        "Response server (port 4000): ",
-        JSON.stringify(responseServer)
-      );
-      response.error = "";
       console.log("Response server: ", JSON.stringify(response));
     }
   } catch (error) {
