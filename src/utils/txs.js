@@ -1,4 +1,5 @@
 import invoice from "../contracts/invoice";
+import forwarder from "../contracts/forwarder";
 
 const ZeroAddress = "0x0000000000000000000000000000000000000000";
 const InvoiceAddress =
@@ -41,76 +42,107 @@ const TypedData = {
 //Reference: https://github.com/OpenZeppelin/defender-example-metatx-relay/blob/7ae0dc38591f3c2210eb696c18360cde4d391703/app/src/eth/txs.js
 export async function submit(
   paidInvoice,
-  bytes32InvoiceId,
-  bytes16MemberLocation,
-  bytes16InvoiceDates,
-  bytes16CostData,
-  bytes16Occupations,
-  bytes16Gender,
-  uint256Age,
-  provider,
-  currentAccount
+  invoiceId,
+  memberLocation,
+  invoiceDates,
+  costData,
+  occupations,
+  gender,
+  age,
+  web3,
+  from
 ) {
-  //const network = await provider.eth.net.getId();
-  //e.g. (if selected Rinkeby in our MetaMask account) txs network: 4
-  //console.log("txs network: ", network);
-
-  // Get nonce for current signer
-  //Get the number of transactions sent from this address. We add "pending" in order to
-  //include pending transactions. Then we obtain the nonce.
-  //e.g. nonce: 243
-  //NOTA: No sé si la dirección debería ser la del contrato del Forwarder y no la de currentAccount (from). Ya se verá
-  //cuando termine de implementar la gestión de la transacción (depende de si lanzo una transacción desde
-  //el contrato forwarder).
-  const nonce = await provider.eth
-    .getTransactionCount(currentAccount, "pending")
-    .then((nonce) => nonce.toString());
-  //console.log("nonce:" , nonce);
-
-  // Encode meta-tx request
-  const data = invoice.methods
-    .createInvoice(
-      paidInvoice,
-      bytes32InvoiceId,
-      bytes16MemberLocation,
-      bytes16InvoiceDates,
-      bytes16CostData,
-      bytes16Occupations,
-      bytes16Gender,
-      uint256Age
-    )
-    .encodeABI();
-  console.log("Encode ABI (data): ", data);
-  const request = {
-    from: currentAccount,
-    to: InvoiceAddress,
-    value: 0,
-    gas: 2e6,
-    nonce,
-    data,
-  };
-
-  // Get the signature
   let response = {
-    hash: "0x######",
-    error: "0",
+    hash: ZeroAddress,
+    error: "Meta-transaction not processed.",
   };
   try {
+    //const network = await web3.eth.net.getId();
+    //e.g. (if selected Rinkeby in our MetaMask account) txs network: 4
+    //console.log("txs network: ", network);
+
+    // Get nonce for current signer.
+    const nonce = await forwarder.methods.getNonce(from).call();
+    console.log("nonce:", nonce);
+    //Get user account hash for the signer.
+    const typeHash = await forwarder.methods.getHash(from).call();
+    response.hash = typeHash;
+    console.log("TypeHash: ", response.hash);
+    console.log("Chain id: ", process.env.REACT_APP_CHAIN_ID);
+    console.log("Forwarder contract address: ", ForwarderAddress);
+
+    // Encode meta-tx request
+    const data = invoice.methods
+      .createInvoice(
+        paidInvoice,
+        invoiceId,
+        memberLocation,
+        invoiceDates,
+        costData,
+        occupations,
+        gender,
+        age
+      )
+      .encodeABI();
+    console.log("Encode ABI (data): ", data);
+    console.log("Account from: ", from);
+    console.log("Invoice address: ", InvoiceAddress);
+    const request = {
+      from,
+      to: InvoiceAddress,
+      value: 0,
+      gas: 2e6,
+      nonce,
+      data,
+    };
+
+    // Get the signature
     const toSign = { ...TypedData, message: request };
-    const signature = await provider.currentProvider.send(
-      "eth_signTypedData_v4",
-      [currentAccount, JSON.stringify(toSign)]
-    );
-    console.log("Signature: ", signature);
+    //const signature = await web3.currentProvider.send('eth_signTypedData_v4', [from, JSON.stringify(toSign)]);
+    //console.log("Signature: ", signature);
+    const params = [from, JSON.stringify(toSign)];
+    let signature;
+    let validSignature = true;
+    await web3.currentProvider
+      .request({
+        method: "eth_signTypedData_v4",
+        params,
+      })
+      .then((result) => {
+        // The result varies by RPC method.
+        // For example, this method will return a transaction hash hexadecimal string on success.
+        signature = result;
+        console.log("Signature: " + signature);
+      })
+      .catch((error) => {
+        // If the request fails, the Promise will reject with an error.
+        validSignature = false;
+        if (error.code === 4001) {
+          //MetaMask Message Signature: User denied message signature
+          response.error = "Please, sign the meta-transaction (gasless).";
+        } else {
+          response.error = error.message;
+        }
+        console.log("Signature failure: ", error.message);
+      });
+
+    if (validSignature) {
+      // Send request to the server
+      const responseServer = await fetch(RelayUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...request, signature }),
+      }).then((r) => r.json());
+      console.log(
+        "Response server (port 4000): ",
+        JSON.stringify(responseServer)
+      );
+      response.error = "";
+      console.log("Response server: ", JSON.stringify(response));
+    }
   } catch (error) {
     response.error = error.message;
   }
 
-  // Send request to the server
-  //const response = await fetch(RelayUrl, {
-  //  method: 'POST',
-  //  headers: { 'Content-Type': 'application/json' },
-  //  body: JSON.stringify({ ...request, signature })
-  //}).then(r => r.json());
   return response;
 }

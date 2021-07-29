@@ -8,6 +8,7 @@
 # User-specific files
 /contracts/compile.js
 /contracts/deploy.js
+/src/contracts/build
 .env
 
 # testing

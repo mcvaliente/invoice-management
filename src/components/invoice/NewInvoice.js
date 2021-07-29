@@ -612,7 +612,7 @@ function NewInvoice(props) {
       //Get the current account.
       const currentAccount = getCurrentAccount();
       console.log("Current account: ", currentAccount);
-      //META-TX TODO
+      //META-TX
       const tx = await submit(
         paidInvoice,
         bytes32InvoiceId,
@@ -625,17 +625,27 @@ function NewInvoice(props) {
         web3,
         currentAccount
       );
-      setTxHash(tx.hash);
-      console.log("tx result hash: ", txHash);
-      console.log("tx result error: ", tx.error);
-
-      //Checking the blockchain
-      const totalInvoices = await invoice.methods.getInvoiceCount().call();
-      console.log("Total invoices: ", totalInvoices);
-
+      if (tx !== null) {
+        console.log("tx result hash: ", tx.hash);
+        console.log("tx result error: ", tx.error);
+        if (tx.error === "") {
+          setTxHash(tx.hash);
+          setSuccessNewInvoice(true);
+          //Checking the blockchain
+          const totalInvoices = await invoice.methods.getInvoiceCount().call();
+          console.log("Total invoices: ", totalInvoices);
+        } else {
+          console.log("Meta-transaction returns an error: ", tx.error);
+          errors.general = "META-TX ERROR: " + tx.error;
+        }
+      } else {
+        console.log("Meta-transaction failure.");
+        errors.general =
+          "META-TX ERROR: The meta-transaction has not been processed.";
+      }
       setLoading(false);
       setMetaTxRequest(false);
-      setSuccessNewInvoice(true);
+      setErrorMessages(errors);
       generalDivRef.current.focus();
     } catch (error) {
       setLoading(false);
