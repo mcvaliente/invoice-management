@@ -40,7 +40,7 @@ const TypedData = {
 };
 
 //Reference: https://github.com/OpenZeppelin/defender-example-metatx-relay/blob/7ae0dc38591f3c2210eb696c18360cde4d391703/app/src/eth/txs.js
-export async function submit(
+export async function sendMetaTx(
   paidInvoice,
   invoiceId,
   memberLocation,
@@ -131,7 +131,7 @@ export async function submit(
       response = await fetch(RelayUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...request, signature }),
+        body: JSON.stringify({ ...request, signature, typeHash }),
       }).then((r) => r.json());
       console.log("Response server: ", JSON.stringify(response));
     }

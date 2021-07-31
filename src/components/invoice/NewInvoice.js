@@ -47,7 +47,7 @@ import InvoiceOccupations from "./InvoiceOccupations";
 import { getWeb3, getCurrentAccount } from "../../utils/web3";
 import invoice from "../../contracts/invoice";
 import ConfirmDialog from "../shared/ConfirmDialog";
-import { submit } from "../../utils/txs.js";
+import { sendMetaTx } from "../../utils/txs.js";
 
 function NewInvoice(props) {
   const [paidInvoice, setPaidInvoice] = useState(false);
@@ -77,7 +77,6 @@ function NewInvoice(props) {
   const [errorMessages, setErrorMessages] = useState({});
   const [successNewInvoice, setSuccessNewInvoice] = useState(false);
   const [metaTxRequest, setMetaTxRequest] = useState(false);
-  const [txHash, setTxHash] = useState("");
 
   const inputDocNumberRef = useRef();
   const inputInvoiceDateRef = useRef();
@@ -613,7 +612,7 @@ function NewInvoice(props) {
       const currentAccount = getCurrentAccount();
       console.log("Current account: ", currentAccount);
       //META-TX
-      const tx = await submit(
+      const tx = await sendMetaTx(
         paidInvoice,
         bytes32InvoiceId,
         bytes16MemberLocation,
@@ -629,7 +628,6 @@ function NewInvoice(props) {
         console.log("tx result hash: ", tx.hash);
         console.log("tx result error: ", tx.error);
         if (tx.error === "") {
-          setTxHash(tx.hash);
           setSuccessNewInvoice(true);
           //Checking the blockchain
           const totalInvoices = await invoice.methods.getInvoiceCount().call();

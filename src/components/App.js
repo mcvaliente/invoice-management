@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { Container } from "@material-ui/core";
-import Home from "./components/home/Home";
+import Home from "./home/Home";
 import { Switch, Route } from "react-router-dom";
-import Error404 from "./components/error/Error404";
-import { checkMetaMask, checkNetwork, enableMetaMask } from "./utils/web3";
-import MetaMaskInstallationDialog from "./components/wallet/MetaMaskInstallationDialog";
-import MetaMaskNetworkDialog from "./components/wallet/MetaMaskNetworkDialog";
-import MetaMaskConnectionDialog from "./components/wallet/MetaMaskConnectionDialog";
-import InvoiceSearch from "./components/invoice/InvoiceSearch";
+import Error404 from "./error/Error404";
+import { checkMetaMask, checkNetwork, enableMetaMask } from "../utils/web3";
+import MetaMaskInstallationDialog from "./wallet/MetaMaskInstallationDialog";
+import MetaMaskNetworkDialog from "./wallet/MetaMaskNetworkDialog";
+import MetaMaskConnectionDialog from "./wallet/MetaMaskConnectionDialog";
+import InvoiceSearch from "./invoice/InvoiceSearch";
 
 function App() {
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(true);
