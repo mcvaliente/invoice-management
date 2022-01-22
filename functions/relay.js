@@ -71,6 +71,7 @@ async function relay(request) {
     hash: "No hash",
     error: "",
   };
+  //TODO: Pending to check
   /**try {
     //Get the provider without credentials.
     //const web3 = new Web3(
