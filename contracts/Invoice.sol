@@ -1,8 +1,47 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.7.0 <0.9.0;
 
-contract Invoice {
+/**
+ * A base contract to be inherited by any contract that want to receive relayed transactions
+ * A subclass must use "_msgSender()" instead of "msg.sender"
+ */
+contract BaseRelayRecipient {
+
+    /*
+     * Forwarder singleton we accept calls from
+     */
+    address public trustedForwarder;
+
+    modifier trustedForwarderOnly() {
+        require(msg.sender == address(trustedForwarder), "Function can only be called through the trusted Forwarder.");
+        _;
+    }
+
+    function isTrustedForwarder(address forwarder) public view returns(bool) {
+        return forwarder == trustedForwarder;
+    }
+
+    /**
+     * return the sender of this call.
+     * if the call came through our trusted forwarder, return the original sender.
+     * otherwise, return `msg.sender`.
+     * should be used in the contract anywhere instead of msg.sender
+     */
+    function _msgSender() internal virtual view returns (address ret) {
+        if (msg.data.length >= 24 && isTrustedForwarder(msg.sender)) {
+            // At this point we know that the sender is a trusted forwarder,
+            // so we trust that the last bytes of msg.data are the verified sender address.
+            // Extract sender address from the end of msg.data.
+            assembly {
+                ret := shr(96,calldataload(sub(calldatasize(),20)))
+            }
+        } else {
+            return msg.sender;
+        }
+    }
+}
+
+contract Invoice is BaseRelayRecipient {
     
     struct InvoiceInfo {
         bool paid;
@@ -35,7 +74,11 @@ contract Invoice {
     
     mapping(bytes32 => InvoiceInfo) invoices; //bytes32 represents invoiceId
     uint32 deployedInvoices;
-    
+
+    constructor (address _trustedForwarder) {
+        trustedForwarder = _trustedForwarder;
+    }
+   
     function createInvoice(
         bool paid,
         bytes32 invoiceId,
