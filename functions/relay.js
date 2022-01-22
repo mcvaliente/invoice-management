@@ -66,13 +66,12 @@ async function relay(request) {
   console.log("Nonce: ", nonce);
   console.log("Data: ", data);
   console.log("Signature: ", signature);
-  console.log("TypeHash: ", typeHash);
 
   let tx = {
-    hash: typeHash,
+    hash: "No hash",
     error: "",
   };
-  try {
+  /**try {
     //Get the provider without credentials.
     //const web3 = new Web3(
     //  new Web3.providers.HttpProvider(
@@ -133,7 +132,7 @@ async function relay(request) {
     console.log("EXCEPTION ERROR (relay.js): ", error);
     tx.hash = ZeroAddress;
     tx.error = error.message;
-  }
+  }**/
   console.log(`Sent meta-tx: ${tx.hash}`);
 
   return tx;

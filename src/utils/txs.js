@@ -62,12 +62,11 @@ export async function sendMetaTx(
     //console.log("txs network: ", network);
 
     // Get nonce for current signer.
-    const nonce = await forwarder.methods.getNonce(from).call();
+    const nonce = await forwarder.methods
+      .getNonce(from)
+      .call()
+      .then((nonce) => nonce.toString());
     console.log("nonce:", nonce);
-    //Get user account hash for the signer.
-    const typeHash = await forwarder.methods.getHash(from).call();
-    response.hash = typeHash;
-    console.log("TypeHash: ", response.hash);
     console.log("Chain id: ", process.env.REACT_APP_CHAIN_ID);
     console.log("Forwarder contract address: ", ForwarderAddress);
 
@@ -131,7 +130,7 @@ export async function sendMetaTx(
       response = await fetch(RelayUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...request, signature, typeHash }),
+        body: JSON.stringify({ ...request, signature }),
       }).then((r) => r.json());
       console.log("Response server: ", JSON.stringify(response));
     }
